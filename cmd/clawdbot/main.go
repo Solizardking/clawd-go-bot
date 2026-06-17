@@ -24,6 +24,7 @@ import (
 	"github.com/8bitlabs/clawdbot/pkg/agent"
 	"github.com/8bitlabs/clawdbot/pkg/config"
 	"github.com/8bitlabs/clawdbot/pkg/hardware"
+	"github.com/8bitlabs/clawdbot/pkg/phoenix"
 	"github.com/8bitlabs/clawdbot/pkg/providers"
 	"github.com/8bitlabs/clawdbot/pkg/solana"
 )
@@ -104,6 +105,7 @@ Features:
 		NewHardwareCommand(),
 		NewVersionCommand(),
 		NewWebCommand(),
+		NewPerpsCommand(),
 	)
 
 	return cmd

@@ -439,6 +439,10 @@ func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("ZKROUTER_BASE_URL"); v != "" && len(cfg.ModelList) > 0 {
 		cfg.ModelList[0].APIBase = v
 	}
+	// Phoenix perps API
+	if v := os.Getenv("PHOENIX_API_URL"); v != "" {
+		cfg.Solana.PhoenixAPIURL = v
+	}
 	// Clawdbot install ID — used for RPC auth header
 	if v := os.Getenv("CLAWDBOT_INSTALL_ID"); v != "" {
 		// stored for use by Solana RPC client as X-Clawdbot-Id header
