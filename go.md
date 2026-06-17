@@ -3,7 +3,9 @@
 **Repo:** `https://github.com/Solizardking/clawdbot-go`  
 **Local path:** `/Users/8bit/clawdbot-go`  
 **Language:** Go 1.25  
-**Module:** `github.com/8bitlabs/clawdbot`
+**Module:** `github.com/8bitlabs/clawdbot`  
+**Public hub:** `https://github.com/solizardking/solana-clawd`  
+**Public terminal:** `https://cheshireterminal.ai`
 
 ---
 
@@ -109,7 +111,7 @@ Also fix the single-shot `-m` message path at `cmd/clawdbot/main.go:~120` — sa
 
 The README references:
 ```
-git clone https://github.com/x402agent/clawdbot-go-main.git
+git clone https://github.com/Solizardking/clawdbot-go.git
 ```
 This was partially updated but double-check — all references should use:
 ```
@@ -199,4 +201,5 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 git push origin main
 ```
 
-Remote: `https://github.com/Solizardking/clawdbot-go`
+Remote: `https://github.com/Solizardking/clawdbot-go`  
+Hub: `https://github.com/solizardking/solana-clawd`

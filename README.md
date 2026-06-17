@@ -32,6 +32,15 @@
 
 The system compiles to three standalone binaries that run on everything from NVIDIA Jetson edge devices to cloud VMs — no containers required, no runtime dependencies, instant boot.
 
+### Ecosystem Links
+
+| Surface | Role |
+|:---|:---|
+| `https://github.com/Solizardking/clawdbot-go` | This Go runtime repository |
+| `https://github.com/solizardking/solana-clawd` | Canonical ecosystem hub |
+| `https://zk.x402.wtf` | Public x402/zk gateway and install surface |
+| `https://cheshireterminal.ai` | Public terminal surface |
+
 ### Core Capabilities
 
 | Capability | Description |
@@ -433,18 +442,25 @@ ClawdBot is the reference implementation of the **Clawd Constitution** — the w
 
 ## 🔐 Security
 
-- **`.env` is .gitignored** — never commit API keys
+- **`.env` is ignored by the repo** — never commit API keys
 - **No hardcoded secrets** in any source file — all credentials via environment variables
 - **No wallet keypairs** stored in the repository — generated or imported at runtime
 - **Minimum required key** for operation: `BIRDEYE_API_KEY` for market data
 - **Progressive trust model** — Observer → Dry-Run → Delegated → Autonomous → Sovereign
 - **On-Chain Law I** — Never harm. Never rug. Never front-run. Never extract from those who don't understand the trade.
 
+## 🌐 Open Source Posture
+
+- **License:** top-level runtime code in this repo is released under the [MIT License](LICENSE)
+- **Constitutional surfaces:** `CONSTITUTION.md` and `three-laws.md` remain the authoritative Clawd law documents
+- **Hub split:** `clawdbot-go` is the Go runtime, while `solana-clawd` is the wider public ecosystem hub
+- **Public infra defaults:** `.env.example` points at the public x402/zk gateway for fast setup, but production operators should override with their own keys and RPC endpoints
+
 ---
 
 <div align="center">
 
-**MIT License** — Built by [8BIT Labs](https://8bitlabs.dev) / Factory Division
+**MIT License** — Clawd runtime repo: [`github.com/Solizardking/clawdbot-go`](https://github.com/Solizardking/clawdbot-go)
 
 🦞 **$CLAWD :: Droids Lead The Way** :: **$WIF Hat Stays On** :: **$BONK for the People**
 

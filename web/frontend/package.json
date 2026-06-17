@@ -2,7 +2,12 @@
   "name": "clawdbot-console",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Solizardking/clawdbot-go.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

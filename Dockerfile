@@ -15,6 +15,12 @@ RUN make build
 # ── Stage 2: Runtime ──────────────────────────────────────────────────
 FROM alpine:3.22
 
+LABEL org.opencontainers.image.title="clawdbot-go" \
+      org.opencontainers.image.description="ClawdBot Go runtime for the Solana Clawd ecosystem" \
+      org.opencontainers.image.source="https://github.com/Solizardking/clawdbot-go" \
+      org.opencontainers.image.documentation="https://github.com/solizardking/solana-clawd" \
+      org.opencontainers.image.licenses="MIT"
+
 RUN apk add --no-cache ca-certificates tzdata i2c-tools
 
 WORKDIR /app

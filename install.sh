@@ -7,6 +7,8 @@
 set -euo pipefail
 
 REPO="https://github.com/Solizardking/clawdbot-go"
+HUB_REPO="https://github.com/solizardking/solana-clawd"
+TERMINAL_URL="https://cheshireterminal.ai"
 INSTALL_API="https://zk.x402.wtf/api/install"
 ZKROUTER_BASE="https://clawdrouter-zk.fly.dev/v1"
 RPC_URL="https://zk.x402.wtf/api/solana/rpc-public"
@@ -192,7 +194,9 @@ echo -e "  ${CYAN}clawdbot ooda --sim${RESET}          # paper trading mode"
 echo -e "  ${CYAN}clawdbot solana trending${RESET}     # top Solana tokens"
 echo
 echo -e "  ${BOLD}Edit your config:${RESET}  ${CYAN}nano ${ENV_FILE}${RESET}"
-echo -e "  ${BOLD}Docs:${RESET}              ${CYAN}${REPO}${RESET}"
+echo -e "  ${BOLD}Runtime repo:${RESET}      ${CYAN}${REPO}${RESET}"
+echo -e "  ${BOLD}Ecosystem hub:${RESET}    ${CYAN}${HUB_REPO}${RESET}"
+echo -e "  ${BOLD}Terminal:${RESET}         ${CYAN}${TERMINAL_URL}${RESET}"
 echo -e "  ${BOLD}Free AI portal:${RESET}    ${CYAN}https://zk.x402.wtf${RESET}"
 echo
 echo -e "  🦞 \$CLAWD :: Droids Lead The Way"

@@ -1252,6 +1252,430 @@ func NewWebCommand() *cobra.Command {
 	return cmd
 }
 
+// ── Perps Command (Phoenix perpetual futures) ────────────────────────
+
+func NewPerpsCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "perps",
+		Short: "Phoenix perpetual futures — prices, positions, orders, and live trading",
+	}
+	cmd.AddCommand(
+		newPerpsMarketsCmd(),
+		newPerpsPriceCmd(),
+		newPerpsCandlesCmd(),
+		newPerpsStateCmd(),
+		newPerpsOrdersCmd(),
+		newPerpsTradesCmd(),
+		newPerpsOrderCmd(),
+	)
+	return cmd
+}
+
+// perps markets — list all active markets
+func newPerpsMarketsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "markets",
+		Short: "List all Phoenix perp markets",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			markets, err := cl.ListMarkets(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s%-8s %-12s %-10s %-10s %-6s%s\n",
+				colorAmber, "SYMBOL", "STATUS", "TAKER FEE", "MAKER FEE", "ISO", colorReset)
+			fmt.Println(strings.Repeat("─", 52))
+			for _, m := range markets {
+				iso := " "
+				if m.IsolatedOnly {
+					iso = "✓"
+				}
+				fmt.Printf("%-8s %-12s %-10.4f %-10.4f %-6s\n",
+					m.Symbol, m.MarketStatus, m.TakerFee, m.MakerFee, iso)
+			}
+			fmt.Printf("\n%s%d markets%s\n", colorDim, len(markets), colorReset)
+			return nil
+		},
+	}
+}
+
+// perps price [symbol] — mark price and funding rate from exchange snapshot
+func newPerpsPriceCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "price [symbol]",
+		Short: "Show mark price and funding rate (all markets or single symbol)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			snap, err := cl.GetSnapshot(ctx)
+			if err != nil {
+				return err
+			}
+			filter := ""
+			if len(args) > 0 {
+				filter = strings.ToUpper(args[0])
+			}
+			fmt.Printf("%s%-8s %-16s %-16s %-14s %-12s%s\n",
+				colorAmber, "SYMBOL", "MARK PRICE", "INDEX PRICE", "FUNDING RATE", "OPEN INT.", colorReset)
+			fmt.Println(strings.Repeat("─", 70))
+			for _, m := range snap.Markets {
+				if filter != "" && strings.ToUpper(m.Symbol) != filter {
+					continue
+				}
+				fundingPct := m.FundingRate * 100
+				fmt.Printf("%-8s $%-15.4f $%-15.4f %+.6f%%   %.2f\n",
+					m.Symbol, m.MarkPrice, m.IndexPrice, fundingPct, m.OpenInterest)
+			}
+			fmt.Printf("\n%sSlot: %d%s\n", colorDim, snap.Slot, colorReset)
+			return nil
+		},
+	}
+}
+
+// perps candles <symbol> [--tf 1h] [--limit 20]
+func newPerpsCandlesCmd() *cobra.Command {
+	var tf string
+	var limit int
+
+	cmd := &cobra.Command{
+		Use:   "candles <symbol>",
+		Short: "OHLCV candles for a perp market",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			candles, err := cl.GetCandles(ctx, strings.ToUpper(args[0]), tf, limit)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s%s (%s) — %d candles%s\n", colorAmber, args[0], tf, len(candles), colorReset)
+			fmt.Printf("%s%-24s %-12s %-12s %-12s %-12s %-12s%s\n",
+				colorDim, "TIME", "OPEN", "HIGH", "LOW", "CLOSE", "VOLUME", colorReset)
+			fmt.Println(strings.Repeat("─", 84))
+			for _, c := range candles {
+				t := time.UnixMilli(c.Time).UTC().Format("2006-01-02 15:04")
+				vol := ""
+				if c.Volume != nil {
+					vol = fmt.Sprintf("%.4f", *c.Volume)
+				}
+				fmt.Printf("%-24s %-12.4f %-12.4f %-12.4f %-12.4f %-12s\n",
+					t, c.Open, c.High, c.Low, c.Close, vol)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&tf, "tf", "1h", "Timeframe: 1m 5m 15m 1h 4h 1d")
+	cmd.Flags().IntVar(&limit, "limit", 20, "Number of candles")
+	return cmd
+}
+
+// perps state <authority> — trader account state (positions, PnL)
+func newPerpsStateCmd() *cobra.Command {
+	var pdaIndex int
+
+	cmd := &cobra.Command{
+		Use:   "state <authority>",
+		Short: "Show trader account state: positions, PnL, margins",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			resp, err := cl.GetTraderState(ctx, args[0], pdaIndex)
+			if err != nil {
+				return err
+			}
+			for _, t := range resp.Traders {
+				fmt.Printf("%s── Trader Account ──%s\n", colorTeal, colorReset)
+				fmt.Printf("  Collateral:    $%.4f\n", t.Collateral)
+				fmt.Printf("  Portfolio:     $%.4f\n", t.PortfolioValue)
+				fmt.Printf("  Unrealized PnL:%s $%.4f%s\n", pnlColor(t.UnrealizedPnl), t.UnrealizedPnl, colorReset)
+				fmt.Printf("  Init Margin:   $%.4f\n", t.InitialMargin)
+				fmt.Printf("  Maint Margin:  $%.4f\n", t.MaintenanceMargin)
+				fmt.Printf("  Risk State:    %s\n", t.RiskState)
+				fmt.Printf("  Activity:      %s\n\n", t.ActivityState)
+
+				if len(t.Positions) > 0 {
+					fmt.Printf("%s── Open Positions ──%s\n", colorGreen, colorReset)
+					fmt.Printf("%s%-8s %-12s %-12s %-12s %-12s %-12s%s\n",
+						colorDim, "SYMBOL", "SIZE", "ENTRY", "MARK", "LIQ PRICE", "UNREAL PnL", colorReset)
+					fmt.Println(strings.Repeat("─", 72))
+					for _, p := range t.Positions {
+						fmt.Printf("%-8s %-12s $%-11.4f $%-11.4f $%-11.4f %s$%.4f%s\n",
+							p.Symbol, p.BaseLots, p.EntryPrice, p.MarkPrice, p.LiquidationPrice,
+							pnlColor(p.UnrealizedPnl), p.UnrealizedPnl, colorReset)
+					}
+					fmt.Println()
+				} else {
+					fmt.Printf("%sNo open positions%s\n\n", colorDim, colorReset)
+				}
+
+				if len(t.LimitOrders) > 0 {
+					fmt.Printf("%s── Open Orders ──%s\n", colorAmber, colorReset)
+					fmt.Printf("%s%-8s %-6s %-12s %-12s%s\n",
+						colorDim, "SYMBOL", "SIDE", "PRICE", "SIZE", colorReset)
+					fmt.Println(strings.Repeat("─", 42))
+					for _, o := range t.LimitOrders {
+						fmt.Printf("%-8s %-6s $%-11.4f %-12s\n",
+							o.Symbol, o.Side, o.Price, o.BaseLots)
+					}
+				}
+			}
+			return nil
+		},
+	}
+	cmd.Flags().IntVar(&pdaIndex, "pda-index", 0, "Trader PDA index")
+	return cmd
+}
+
+// perps orders <authority> [--symbol SOL] [--limit 20]
+func newPerpsOrdersCmd() *cobra.Command {
+	var symbol string
+	var limit int
+
+	cmd := &cobra.Command{
+		Use:   "orders <authority>",
+		Short: "Order history for a trader account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			resp, err := cl.GetOrderHistory(ctx, args[0], symbol, limit, "")
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s%-8s %-8s %-10s %-12s %-12s %-12s %-10s%s\n",
+				colorAmber, "SYMBOL", "SIDE", "STATUS", "PRICE", "QTY", "FILLED", "PLACED AT", colorReset)
+			fmt.Println(strings.Repeat("─", 80))
+			for _, o := range resp.Data {
+				placed := ""
+				if o.PlacedAt != nil {
+					placed = *o.PlacedAt
+					if len(placed) > 16 {
+						placed = placed[:16]
+					}
+				}
+				fmt.Printf("%-8s %-8s %-10s $%-11.4f %-12s %-12s %-10s\n",
+					o.MarketSymbol, o.Side, o.Status, o.Price, o.BaseQty, o.FilledBaseQty, placed)
+			}
+			if resp.HasMore {
+				fmt.Printf("\n%s... more results available%s\n", colorDim, colorReset)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&symbol, "symbol", "", "Filter by market symbol (e.g. SOL)")
+	cmd.Flags().IntVar(&limit, "limit", 20, "Number of orders to return")
+	return cmd
+}
+
+// perps trades <authority> [--symbol SOL] [--limit 20]
+func newPerpsTradesCmd() *cobra.Command {
+	var symbol string
+	var limit int
+
+	cmd := &cobra.Command{
+		Use:   "trades <authority>",
+		Short: "Trade history for a trader account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			resp, err := cl.GetTradeHistory(ctx, args[0], symbol, limit, "")
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s%-8s %-20s %-12s %-12s %-12s %-8s %-8s%s\n",
+				colorAmber, "SYMBOL", "TIME", "PRICE", "DELTA", "REAL PnL", "TYPE", "LIQ.", colorReset)
+			fmt.Println(strings.Repeat("─", 84))
+			for _, t := range resp.Data {
+				ts := t.Timestamp
+				if len(ts) > 19 {
+					ts = ts[:19]
+				}
+				sig := ""
+				if t.Signature != nil {
+					sig = (*t.Signature)[:8] + "…"
+				}
+				_ = sig
+				fmt.Printf("%-8s %-20s %-12s %-12s %s%-12s%s %-8s %-8s\n",
+					t.MarketSymbol, ts, t.Price, t.BaseLotsDelta,
+					pnlColorStr(t.RealizedPnl), t.RealizedPnl, colorReset,
+					t.TradeType, t.Liquidity)
+			}
+			if resp.HasMore {
+				fmt.Printf("\n%s... more results available%s\n", colorDim, colorReset)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&symbol, "symbol", "", "Filter by market symbol")
+	cmd.Flags().IntVar(&limit, "limit", 20, "Number of trades to return")
+	return cmd
+}
+
+// perps order market|limit — place orders via Phoenix RPC + Solana tx submission
+func newPerpsOrderCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "order",
+		Short: "Place a market or limit order (requires wallet key)",
+	}
+	cmd.AddCommand(newPerpsMarketOrderCmd(), newPerpsLimitOrderCmd())
+	return cmd
+}
+
+func newPerpsMarketOrderCmd() *cobra.Command {
+	var symbol, side, keyPath string
+	var qty float64
+	var reduceOnly bool
+
+	cmd := &cobra.Command{
+		Use:   "market",
+		Short: "Place a market order on Phoenix perps",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			if keyPath == "" {
+				keyPath = cfg.Solana.WalletKeyPath
+			}
+			if keyPath == "" {
+				return fmt.Errorf("wallet key path required: set --key or WALLET_KEY_PATH or wallet_key_path in config")
+			}
+			kp, err := phoenix.LoadKeypair(keyPath)
+			if err != nil {
+				return fmt.Errorf("load keypair: %w", err)
+			}
+			authority := kp.Pubkey()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			fmt.Printf("%s[PERPS]%s Building market order: %s %s %s (qty=%.4f)…\n",
+				colorGreen, colorReset, side, symbol, authority[:8]+"…", qty)
+
+			ixs, err := cl.BuildMarketOrder(ctx, phoenix.MarketOrderParams{
+				Authority:  authority,
+				Symbol:     strings.ToUpper(symbol),
+				Side:       side,
+				Quantity:   qty,
+				ReduceOnly: reduceOnly,
+			})
+			if err != nil {
+				return fmt.Errorf("build order: %w", err)
+			}
+			fmt.Printf("%s[PERPS]%s Got %d instructions, signing and sending via RPC…\n",
+				colorTeal, colorReset, len(ixs))
+
+			rpcURL := cfg.Solana.HeliusRPCURL
+			sig, err := phoenix.SignAndSend(ctx, kp, ixs, rpcURL)
+			if err != nil {
+				return fmt.Errorf("send tx: %w", err)
+			}
+			fmt.Printf("\n%s[PERPS]%s ✓ Order submitted!\n", colorGreen, colorReset)
+			fmt.Printf("  Signature: %s%s%s\n", colorTeal, sig, colorReset)
+			fmt.Printf("  Explorer:  https://solscan.io/tx/%s\n", sig)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&symbol, "symbol", "SOL", "Market symbol (e.g. SOL, BTC, ETH)")
+	cmd.Flags().StringVar(&side, "side", "", "Order side: buy or sell")
+	cmd.Flags().Float64Var(&qty, "qty", 0, "Order quantity in base asset tokens")
+	cmd.Flags().BoolVar(&reduceOnly, "reduce-only", false, "Reduce position only (close)")
+	cmd.Flags().StringVar(&keyPath, "key", "", "Path to Solana keypair JSON (default: config wallet_key_path)")
+	_ = cmd.MarkFlagRequired("side")
+	return cmd
+}
+
+func newPerpsLimitOrderCmd() *cobra.Command {
+	var symbol, side, keyPath string
+	var qty, price float64
+	var reduceOnly bool
+
+	cmd := &cobra.Command{
+		Use:   "limit",
+		Short: "Place a limit order on Phoenix perps",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.Load()
+			if keyPath == "" {
+				keyPath = cfg.Solana.WalletKeyPath
+			}
+			if keyPath == "" {
+				return fmt.Errorf("wallet key path required: set --key or wallet_key_path in config")
+			}
+			kp, err := phoenix.LoadKeypair(keyPath)
+			if err != nil {
+				return fmt.Errorf("load keypair: %w", err)
+			}
+			authority := kp.Pubkey()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
+			fmt.Printf("%s[PERPS]%s Building limit order: %s %s @ $%.4f (qty=%.4f)…\n",
+				colorGreen, colorReset, side, symbol, price, qty)
+
+			ixs, err := cl.BuildLimitOrder(ctx, phoenix.LimitOrderParams{
+				Authority:  authority,
+				Symbol:     strings.ToUpper(symbol),
+				Side:       side,
+				Quantity:   qty,
+				Price:      price,
+				ReduceOnly: reduceOnly,
+			})
+			if err != nil {
+				return fmt.Errorf("build order: %w", err)
+			}
+			fmt.Printf("%s[PERPS]%s Got %d instructions, signing and sending via RPC…\n",
+				colorTeal, colorReset, len(ixs))
+
+			rpcURL := cfg.Solana.HeliusRPCURL
+			sig, err := phoenix.SignAndSend(ctx, kp, ixs, rpcURL)
+			if err != nil {
+				return fmt.Errorf("send tx: %w", err)
+			}
+			fmt.Printf("\n%s[PERPS]%s ✓ Limit order submitted!\n", colorGreen, colorReset)
+			fmt.Printf("  Signature: %s%s%s\n", colorTeal, sig, colorReset)
+			fmt.Printf("  Explorer:  https://solscan.io/tx/%s\n", sig)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&symbol, "symbol", "SOL", "Market symbol")
+	cmd.Flags().StringVar(&side, "side", "", "Order side: buy or sell")
+	cmd.Flags().Float64Var(&qty, "qty", 0, "Order quantity in base asset tokens")
+	cmd.Flags().Float64Var(&price, "price", 0, "Limit price in USDC")
+	cmd.Flags().BoolVar(&reduceOnly, "reduce-only", false, "Reduce position only")
+	cmd.Flags().StringVar(&keyPath, "key", "", "Path to Solana keypair JSON")
+	_ = cmd.MarkFlagRequired("side")
+	_ = cmd.MarkFlagRequired("price")
+	return cmd
+}
+
+// pnlColor returns the ANSI color for a PnL value.
+func pnlColor(v float64) string {
+	if v >= 0 {
+		return colorGreen
+	}
+	return colorRed
+}
+
+func pnlColorStr(s string) string {
+	if len(s) > 0 && s[0] == '-' {
+		return colorRed
+	}
+	return colorGreen
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 func boolIcon(b bool) string {

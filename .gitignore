@@ -1,0 +1,14 @@
+.env
+.env.local
+.env.*.local
+build/
+dist/
+node_modules/
+.DS_Store
+*.log
+coverage/
+web/frontend/dist/
+zk-primitives/**/node_modules/
+zk-primitives/**/.env
+zk-primitives/**/.env.local
+zk-primitives/**/dist/
