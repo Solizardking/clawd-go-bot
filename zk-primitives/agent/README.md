@@ -87,6 +87,11 @@ The proof JSON shape:
 }
 ```
 
+`inspect`, `verify`, `nullifier`, and `ask` are intentionally
+offline-safe. If `CLAWD_ZK_RPC_URL` is unset, they fall back to
+`http://127.0.0.1:8899` so the agent can still inspect config,
+route intents, and sanity-check proofs without a live RPC.
+
 ## Programmatic API
 
 ```ts
@@ -122,7 +127,7 @@ console.log(result.signature);
 
 | Var | Default | Notes |
 |---|---|---|
-| `CLAWD_ZK_RPC_URL` | — (required) | Helius or other Solana RPC URL. |
+| `CLAWD_ZK_RPC_URL` | — for on-chain actions | Helius or other Solana RPC URL. `inspect` / `verify` / `nullifier` / `ask` can run without it. |
 | `CLAWD_ZK_PROGRAM_ID` | `CLAWDzk11…111` (mainnet) | Base58 pubkey, or one of the named aliases `CLAWDZK_MAINNET` / `CLAWDZK_DEVNET` / `CLAWDZK_LOCALNET`. |
 | `CLAWD_ZK_PHOTON_URL` | = `CLAWD_ZK_RPC_URL` | Helius Photon indexer for compressed-state reads. |
 | `CLAWD_ZK_API_KEY` | none | If your RPC needs a separate header. |
@@ -182,9 +187,10 @@ can drop it in.
 
 ## Status
 
-Scaffold: all modules compile-check, all tests pass, the CLI runs
-end-to-end (the `inspect` and `nullifier` subcommands work without
-network; the others require `CLAWD_ZK_RPC_URL`).
+Scaffold: the package is structured as a production-facing zk agent,
+with offline-safe config inspection, deterministic intent routing,
+and canonical public-input packing for both attestation and commit
+flows. On-chain actions still require a reachable Solana RPC.
 
 Production deployment requires:
 

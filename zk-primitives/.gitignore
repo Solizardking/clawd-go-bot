@@ -1,0 +1,6 @@
+.env
+.env.local
+agent/.env
+agent/.env.local
+client/.env
+client/.env.local

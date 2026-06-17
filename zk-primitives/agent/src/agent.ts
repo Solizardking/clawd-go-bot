@@ -34,6 +34,7 @@ import {
   ClawdZkClient,
   computeNullifier,
   verifyGroth16Offchain,
+  buildCommitPublicInputs,
   buildPublishPublicInputs,
   packPublicInputs,
   type Groth16Proof,
@@ -107,6 +108,9 @@ export interface VerifyProofArgs {
   payloadCommitment?: Bytes32;
   nullifier?: Bytes32;
   attester?: Uint8Array;
+  ciphertextCommitment?: Bytes32;
+  stateVersion?: number | bigint;
+  committer?: Uint8Array;
 }
 
 export interface VerifyProofResult {
@@ -190,6 +194,16 @@ export class ClawdZkAgent {
   /** Construct from environment variables. */
   static async fromEnv(): Promise<ClawdZkAgent> {
     const config = loadAgentConfig();
+    return ClawdZkAgent.fromLoadedConfig(config);
+  }
+
+  /** Construct from env when present, otherwise with offline-safe defaults. */
+  static async fromEnvOrDefaults(): Promise<ClawdZkAgent> {
+    const config = loadAgentConfig(process.env, { requireRpcUrl: false });
+    return ClawdZkAgent.fromLoadedConfig(config);
+  }
+
+  private static async fromLoadedConfig(config: ZkAgentConfig): Promise<ClawdZkAgent> {
     let signer: Keypair | undefined;
     if (config.keypairPath) {
       const raw = await readFile(resolvePath(config.keypairPath), "utf-8");
@@ -236,12 +250,24 @@ export class ClawdZkAgent {
           payloadCommitment: ensure32("payloadCommitment", args.payloadCommitment),
           nullifier: ensure32("nullifier", args.nullifier),
         });
+      } else if (
+        args.modelHash &&
+        args.ciphertextCommitment &&
+        args.stateVersion != null &&
+        args.committer
+      ) {
+        publicInputs = buildCommitPublicInputs({
+          committer: args.committer,
+          modelHash: ensure32("modelHash", args.modelHash),
+          ciphertextCommitment: ensure32("ciphertextCommitment", args.ciphertextCommitment),
+          stateVersion: args.stateVersion,
+        });
       }
     }
     if (!publicInputs) {
       return {
         ok: false,
-        reason: "Either `publicInputs` or (attester + modelHash + payloadCommitment + nullifier) must be provided.",
+        reason: "Either `publicInputs` or publish inputs (attester + modelHash + payloadCommitment + nullifier) or commit inputs (committer + modelHash + ciphertextCommitment + stateVersion) must be provided.",
       };
     }
     const result = verifyGroth16Offchain({ proof: args.proof, publicInputs });
@@ -343,6 +369,14 @@ export class ClawdZkAgent {
       proof: args.proof,
     };
     const instruction = await this.client.commitEncryptedState(commitArgs);
+    const publicInputsPacked = packPublicInputs(
+      buildCommitPublicInputs({
+        committer: attesterPubkey.toBytes(),
+        modelHash,
+        ciphertextCommitment,
+        stateVersion,
+      }),
+    );
 
     const summary = [
       `${CLAWD_BANNER} commitEncryptedState`,
@@ -351,9 +385,10 @@ export class ClawdZkAgent {
       `  modelHash      : 0x${bytesToHex(modelHash)}`,
       `  ciphertext     : 0x${bytesToHex(ciphertextCommitment)}`,
       `  stateVersion   : ${stateVersion.toString()}`,
+      `  public inputs  : 0x${bytesToHex(publicInputsPacked)}`,
     ].join("\n");
 
-    return { instruction, publicInputsPackedHex: "", summary };
+    return { instruction, publicInputsPackedHex: bytesToHex(publicInputsPacked), summary };
   }
 
   /**

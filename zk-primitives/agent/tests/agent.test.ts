@@ -57,6 +57,16 @@ vi.mock("@clawd/zk-client", () => {
   }): Uint8Array[] {
     return [p.attester, p.modelHash, p.payloadCommitment, p.nullifier];
   }
+  function buildCommitPublicInputs(p: {
+    committer: Uint8Array;
+    modelHash: Uint8Array;
+    ciphertextCommitment: Uint8Array;
+    stateVersion: bigint | number;
+  }): Uint8Array[] {
+    const versionBytes = new Uint8Array(32);
+    new DataView(versionBytes.buffer).setBigUint64(0, BigInt(p.stateVersion), true);
+    return [p.committer, p.modelHash, p.ciphertextCommitment, versionBytes];
+  }
   function verifyGroth16Offchain(args: {
     proof: { a: Uint8Array; b: Uint8Array; c: Uint8Array; verifyingKey: Uint8Array };
     publicInputs: Uint8Array[];
@@ -77,6 +87,7 @@ vi.mock("@clawd/zk-client", () => {
     computeNullifier,
     packPublicInputs,
     buildPublishPublicInputs,
+    buildCommitPublicInputs,
     verifyGroth16Offchain,
   };
 });
@@ -91,6 +102,7 @@ import { ClawdZkAgent } from "../src/agent.js";
 import {
   packPublicInputs,
   buildPublishPublicInputs,
+  buildCommitPublicInputs,
   type Groth16Proof,
   type Bytes32,
 } from "@clawd/zk-client";
@@ -123,6 +135,12 @@ function fakeProof(): Groth16Proof {
 describe("loadAgentConfig", () => {
   test("throws if CLAWD_ZK_RPC_URL is missing", () => {
     expect(() => loadAgentConfig({})).toThrow(/CLAWD_ZK_RPC_URL/);
+  });
+
+  test("can fall back to an offline-safe default RPC for inspect-only flows", () => {
+    const cfg = loadAgentConfig({}, { requireRpcUrl: false });
+    expect(cfg.rpcUrl).toBe("http://127.0.0.1:8899");
+    expect(cfg.programId.toBase58()).toBe(DEFAULT_PROGRAM_ID.toBase58());
   });
 
   test("defaults programId to the canonical mainnet program", () => {
@@ -208,6 +226,29 @@ describe("ClawdZkAgent.verifyProof (off-chain)", () => {
             modelHash: new Uint8Array(32),
             payloadCommitment: new Uint8Array(32),
             nullifier: new Uint8Array(32),
+          }),
+        ),
+      ),
+    );
+  });
+
+  test("derives public inputs from commit args when only those are given", () => {
+    const r = agent.verifyProof({
+      proof: fakeProof(),
+      committer: new Uint8Array(32),
+      modelHash: new Uint8Array(32),
+      ciphertextCommitment: new Uint8Array(32),
+      stateVersion: 7,
+    });
+    expect(r.ok).toBe(true);
+    expect(r.publicInputsPackedHex).toBe(
+      hexOf(
+        packPublicInputs(
+          buildCommitPublicInputs({
+            committer: new Uint8Array(32),
+            modelHash: new Uint8Array(32),
+            ciphertextCommitment: new Uint8Array(32),
+            stateVersion: 7,
           }),
         ),
       ),

@@ -18,6 +18,10 @@
 
 import { PublicKey } from "@solana/web3.js";
 
+function publicKeyFromByte(byte: number): PublicKey {
+  return new PublicKey(new Uint8Array(32).fill(byte));
+}
+
 /**
  * Default program id used by the deployed `clawd-zk` program on mainnet.
  *
@@ -26,9 +30,7 @@ import { PublicKey } from "@solana/web3.js";
  * string only at the config layer — the actual program address is
  * set when the Anchor IDL is built and deployed).
  */
-export const DEFAULT_PROGRAM_ID = new PublicKey(
-  "CLAWDzk1111111111111111111111111111111111111",
-);
+export const DEFAULT_PROGRAM_ID = publicKeyFromByte(1);
 
 export interface ZkAgentConfig {
   /** Helius or other Solana RPC URL (api-key may be embedded). */
@@ -47,10 +49,10 @@ export interface ZkAgentConfig {
   network: "mainnet" | "devnet" | "localnet";
 }
 
-const KNOWN_PROGRAM_IDS: Record<string, string> = {
-  CLAWDZK_MAINNET: "CLAWDzk1111111111111111111111111111111111111",
-  CLAWDZK_DEVNET: "CLAWDzk2222222222222222222222222222222222222",
-  CLAWDZK_LOCALNET: "CLAWDzk3333333333333333333333333333333333333",
+const KNOWN_PROGRAM_IDS: Record<string, PublicKey> = {
+  CLAWDZK_MAINNET: DEFAULT_PROGRAM_ID,
+  CLAWDZK_DEVNET: publicKeyFromByte(2),
+  CLAWDZK_LOCALNET: publicKeyFromByte(3),
 };
 
 function asString(v: string | undefined, fallback: string): string {
@@ -74,7 +76,7 @@ function asNetwork(v: string | undefined): ZkAgentConfig["network"] {
 function resolveProgramId(raw: string | undefined): PublicKey {
   if (!raw) return DEFAULT_PROGRAM_ID;
   const named = KNOWN_PROGRAM_IDS[raw.toUpperCase()];
-  if (named) return new PublicKey(named);
+  if (named) return named;
   try {
     return new PublicKey(raw);
   } catch {
@@ -89,9 +91,19 @@ function resolveProgramId(raw: string | undefined): PublicKey {
  *
  * Throws if the required `CLAWD_ZK_RPC_URL` is not set.
  */
-export function loadAgentConfig(env: Record<string, string | undefined> = process.env): ZkAgentConfig {
-  const rpcUrl = asString(env.CLAWD_ZK_RPC_URL, "");
-  if (!rpcUrl) {
+export interface LoadAgentConfigOptions {
+  requireRpcUrl?: boolean;
+  defaultRpcUrl?: string;
+}
+
+export function loadAgentConfig(
+  env: Record<string, string | undefined> = process.env,
+  options: LoadAgentConfigOptions = {},
+): ZkAgentConfig {
+  const requireRpcUrl = options.requireRpcUrl ?? true;
+  const fallbackRpcUrl = options.defaultRpcUrl ?? "http://127.0.0.1:8899";
+  const rpcUrl = asString(env.CLAWD_ZK_RPC_URL, requireRpcUrl ? "" : fallbackRpcUrl);
+  if (!rpcUrl && requireRpcUrl) {
     throw new Error(
       "CLAWD_ZK_RPC_URL is not set. Add it to ~/.clawd-code/.env (or pass `rpcUrl` directly to the agent).",
     );

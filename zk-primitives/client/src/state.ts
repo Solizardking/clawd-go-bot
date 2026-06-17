@@ -34,14 +34,18 @@ export interface PackedStateTreeInfo {
 export async function fetchValidityProofV2(args: {
   rpc: any;
   hashes?: Uint8Array[];
-  addressesWithTrees?: { address: Bytes32; tree: PublicKey }[];
+  addressesWithTrees?: { address: Uint8Array; tree: PublicKey }[];
 }): Promise<ValidityProof> {
-  const sdk = await import("@lightprotocol/stateless.js");
-  const result = await sdk.getValidityProofV0(
-    args.hashes ?? [],
-    args.addressesWithTrees ?? [],
-    [],
-  );
+  const rpc = args.rpc as {
+    getValidityProofV0?: (
+      hashes?: Uint8Array[],
+      newAddresses?: { address: Uint8Array; tree: PublicKey }[],
+    ) => Promise<{ compressedProof: Uint8Array; rootIndices: number[]; addresses?: Uint8Array[] }>;
+  };
+  if (!rpc.getValidityProofV0) {
+    throw new Error("RPC client does not expose getValidityProofV0; use a Light-compatible RPC wrapper.");
+  }
+  const result = await rpc.getValidityProofV0(args.hashes ?? [], args.addressesWithTrees ?? []);
   return {
     compressedProof: result.compressedProof,
     rootIndices: result.rootIndices,
@@ -51,7 +55,9 @@ export async function fetchValidityProofV2(args: {
 
 /** Fetch the current v2 address tree info. */
 export async function fetchAddressTreeV2(rpc: any): Promise<PublicKey> {
-  const sdk = await import("@lightprotocol/stateless.js");
+  if (typeof rpc.getAddressTreeV2 !== "function") {
+    throw new Error("RPC client does not expose getAddressTreeV2; use a Light-compatible RPC wrapper.");
+  }
   return rpc.getAddressTreeV2();
 }
 
@@ -60,7 +66,9 @@ export async function fetchRandomStateTreeV2(rpc: any): Promise<{
   tree: PublicKey;
   queue: PublicKey;
 }> {
-  const sdk = await import("@lightprotocol/stateless.js");
+  if (typeof rpc.getRandomStateTreeInfo !== "function") {
+    throw new Error("RPC client does not expose getRandomStateTreeInfo; use a Light-compatible RPC wrapper.");
+  }
   const info = await rpc.getRandomStateTreeInfo();
   return { tree: info.tree, queue: info.queue };
 }

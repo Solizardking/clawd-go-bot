@@ -27,9 +27,7 @@ import {
 } from "./state.js";
 import { computeNullifier, deriveNullifierAddress } from "./nullifier.js";
 
-const PROGRAM_IDENTITY: PublicKey = new PublicKey(
-  "CLAWDzk11111111111111111111111111111111111",
-);
+const PROGRAM_IDENTITY: PublicKey = new PublicKey(new Uint8Array(32).fill(1));
 
 export class ClawdZkClient {
   readonly rpc: any;

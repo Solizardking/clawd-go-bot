@@ -104,10 +104,10 @@ export async function deriveNullifierAddress(
   if (sdk.deriveAddressV2) {
     const seed = sdk.deriveAddressSeedV2([NULLIFIER_PREFIX, nullifier]);
     const address = sdk.deriveAddressV2(seed, addressTree, programId);
-    return { address, seed };
+    return { address: address.toBytes() as Bytes32, seed };
   }
   // Fallback for v1
   const seed = sdk.deriveAddressSeed([NULLIFIER_PREFIX, nullifier]);
   const address = sdk.deriveAddress(seed, addressTree, programId);
-  return { address, seed };
+  return { address: address.toBytes() as Bytes32, seed };
 }

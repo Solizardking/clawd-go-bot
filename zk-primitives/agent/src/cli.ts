@@ -30,8 +30,9 @@
  */
 
 import { Buffer } from "node:buffer";
+import { pathToFileURL } from "node:url";
 import { ClawdZkAgent } from "./agent.js";
-import { routeIntent } from "./intents.js";
+import { dispatchRoute, routeIntent } from "./intents.js";
 
 const BANNER = "🦞🔐 clawd-zk-agent";
 
@@ -94,7 +95,7 @@ async function main(): Promise<void> {
   const tail = argv.slice(1);
 
   if (sub === "inspect") {
-    const agent = await ClawdZkAgent.fromEnv();
+    const agent = await ClawdZkAgent.fromEnvOrDefaults();
     console.log(agent.describe());
     return;
   }
@@ -102,16 +103,19 @@ async function main(): Promise<void> {
   if (sub === "ask") {
     const text = tail.join(" ").trim();
     if (!text) throw new Error('Usage: clawd-zk-agent ask "<natural language>"');
-    const agent = await ClawdZkAgent.fromEnv();
+    const agent = await ClawdZkAgent.fromEnvOrDefaults();
     const route = routeIntent(text, agent);
-    console.log(JSON.stringify({ route }, null, 2));
+    const result = await dispatchRoute(route, agent).catch((error: unknown) => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
+    console.log(JSON.stringify({ route, result }, null, 2));
     return;
   }
 
   if (sub === "verify") {
     const proofPath = tail[0];
     if (!proofPath) throw new Error("Usage: clawd-zk-agent verify <proof.json>");
-    const agent = await ClawdZkAgent.fromEnv();
+    const agent = await ClawdZkAgent.fromEnvOrDefaults();
     const proof = await ClawdZkAgent.loadProof(proofPath);
     const result = agent.verifyProof({ proof });
     console.log(JSON.stringify(result, null, 2));
@@ -121,7 +125,7 @@ async function main(): Promise<void> {
   if (sub === "nullifier") {
     const context = tail[0];
     if (!context) throw new Error("Usage: clawd-zk-agent nullifier <context>");
-    const agent = await ClawdZkAgent.fromEnv();
+    const agent = await ClawdZkAgent.fromEnvOrDefaults();
     const nullifier = await agent.computeNullifierFor(new Uint8Array(32), context);
     console.log(`🦞🔐 nullifier: 0x${Buffer.from(nullifier).toString("hex")}`);
     return;
@@ -188,8 +192,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
 const invokedAsBinary =
   typeof process !== "undefined" &&
   process.argv[1] != null &&
-  /cli\.(ts|js)$/.test(process.argv[1]) &&
-  process.argv[1].includes("clawd-zk-agent");
+  import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedAsBinary) {
   runCli().then((code) => {

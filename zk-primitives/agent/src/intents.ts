@@ -53,6 +53,7 @@ export interface IntentContext {
   stateVersion?: number | bigint;
   context?: string;
   proofPath?: string;
+  nullifier?: string;
 }
 
 interface MatchCandidate {
@@ -134,7 +135,9 @@ export function routeIntent(
         proofPath: ctx.proofPath,
         modelHash: ctx.modelHash,
         payloadCommitment: ctx.payloadCommitment,
-        nullifier: ctx.ciphertextCommitment, // user supplies a hex if needed
+        ciphertextCommitment: ctx.ciphertextCommitment,
+        stateVersion: ctx.stateVersion,
+        nullifier: ctx.nullifier,
       },
     });
   }
