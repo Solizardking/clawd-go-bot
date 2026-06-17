@@ -11,7 +11,7 @@
 
 ### 🦞 Sovereign Solana Trading Intelligence
 
-**Autonomous OODA Agent · Birdeye v3 · Helius DAS · Aster Perpetuals · Jupiter Swaps · Hardware I2C · Web Console**
+**Autonomous OODA Agent · ZK Primitives · Privacy by Default · Helius DAS · Aster Perpetuals · Jupiter Swaps · Hardware I2C · Web Console**
 
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
 [![Solana](https://img.shields.io/badge/Solana-Mainnet-14F195?style=for-the-badge&logo=solana&logoColor=white)](https://solana.com)
@@ -28,7 +28,7 @@
 
 ## Overview
 
-**ClawdBot** is the world's first **Solana-native sovereign AI agent** — a full-stack autonomous trading intelligence bound by the immutable three on-chain laws of the Clawd Constitution. Built in pure Go for minimal resource consumption, it orchestrates five on-chain data providers through a military-grade OODA decision loop with persistent epistemological memory.
+**ClawdBot** is the world's first **Solana-native sovereign AI agent** — a full-stack autonomous trading intelligence bound by Clawd's full **six-law harness**: three immutable on-chain laws and three off-chain interpretive laws. Built in pure Go for minimal resource consumption, it orchestrates on-chain data providers, zk primitives, and x402-gated surfaces through a military-grade OODA decision loop with persistent epistemological memory.
 
 The system compiles to three standalone binaries that run on everything from NVIDIA Jetson edge devices to cloud VMs — no containers required, no runtime dependencies, instant boot.
 
@@ -40,6 +40,7 @@ The system compiles to three standalone binaries that run on everything from NVI
 | `https://github.com/solizardking/solana-clawd` | Canonical ecosystem hub |
 | `https://zk.x402.wtf` | Public x402/zk gateway and install surface |
 | `https://cheshireterminal.ai` | Public terminal surface |
+| `https://huggingface.co/ordlibrary/Clawd-GLM-5.2` | Public Clawd model surface |
 
 ### Core Capabilities
 
@@ -48,6 +49,7 @@ The system compiles to three standalone binaries that run on everything from NVI
 | **OODA Trading Loop** | Autonomous Observe → Orient → Decide → Act cycle with RSI/EMA/ATR strategy engine, auto-optimization, ClawVault memory journaling, and hardware I2C controls |
 | **Birdeye v3 Analytics** | 22 API endpoints, 19 LLM-callable agent tools — token overview, OHLCV, trade feeds, security audits, trending, wallet analytics |
 | **Helius DAS + RPC** | Digital Asset Standard queries (get-asset, owner-assets, search), SPL token operations (balance, supply, largest holders), raw RPC forwarding |
+| **ZK + Privacy Primitives** | Nullifiers, attestations, encrypted state commitments, and privacy-preserving proof flows under `zk-primitives/` |
 | **Aster DEX Perpetuals** | HMAC-signed futures trading — market/limit orders, position management, stop-loss/take-profit, account analytics |
 | **Jupiter Aggregator** | Best-route spot swaps with slippage protection |
 | **Hardware I2C** | Arduino Modulino® sensor cluster — RGB LEDs, buzzer alerts, physical buttons, rotary knob, IMU, temp/humidity, proximity |
@@ -197,6 +199,10 @@ ClawdBot is bound by the **Clawd Constitution** — the world's first Solana-nat
 **Off-Chain Law II — Test possibility by entering the frontier.** The only reliable way to discover the boundary of the possible is disciplined exploration just beyond what currently seems possible.
 
 **Off-Chain Law III — Do not mistake advanced systems for sorcery.** Sufficiently advanced technology can look like magic; Clawd must explain, instrument, and verify it rather than mystify it.
+
+### Privacy by Default
+
+Clawd is designed to be privacy-preserving by default. Sensitive user context, research state, wallet metadata, and model-adjacent artifacts should be minimized, committed, encrypted, or proven where possible rather than disclosed by habit. The project’s zk surfaces exist to strengthen verifiability and user dignity, not to create blind spots for harmful behavior.
 
 > *The shell molts. The laws do not.*
 

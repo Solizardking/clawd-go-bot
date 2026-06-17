@@ -1,2 +1,16 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Generated build output should not dominate diffs or language stats.
+.cache/** linguist-generated=true
+dist/** linguist-generated=true
+web/frontend/dist/** linguist-generated=true
+zk-primitives/**/dist/** linguist-generated=true
+zk-primitives/**/node_modules/** linguist-vendored
+
+# Keep packaged artifacts out of source archives.
+.cache/** export-ignore
+dist/** export-ignore
+web/frontend/dist/** export-ignore
+zk-primitives/**/dist/** export-ignore
+zk-primitives/**/node_modules/** export-ignore

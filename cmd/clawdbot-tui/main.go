@@ -133,7 +133,7 @@ func main() {
 	infoBar := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter).
-		SetText(fmt.Sprintf("[%s]$CLAWD :: Droids Lead The Way :: 8BIT Labs / Factory Division[-]", clawdDim))
+		SetText(fmt.Sprintf("[%s]$CLAWD :: Droids Lead The Way :: solana-clawd hub :: zk.x402.wtf :: cheshireterminal.ai[-]", clawdDim))
 	infoBar.SetBackgroundColor(tcell.ColorBlack)
 
 	// ── Layout ───────────────────────────────────────────────

@@ -150,8 +150,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
 # ── Install identity ──────────────────────────────────────────────
 CLAWDBOT_INSTALL_ID=${INSTALL_ID}
 
-# ── Free AI via zkrouter (no key needed) ──────────────────────────
-# Powered by clawdrouter-zk.fly.dev — $CLAWD sovereign AI routing
+# ── Free AI via zk.x402.wtf / zkrouter (no key needed) ───────────
+# Public gateway backed by the sovereign $CLAWD router
 ZKROUTER_BASE_URL=${ZKROUTER_BASE}
 ZKROUTER_API_KEY=clawdbot-free
 

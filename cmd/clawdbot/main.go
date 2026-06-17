@@ -1,8 +1,7 @@
 // ClawdBot Go — Ultra-lightweight Solana Trading Intelligence
-// Adapted from PicoClaw architecture for NVIDIA Orin Nano deployment
-// Built by 8BIT Labs / Factory Division
-//
-// Copyright (c) 2026 8BIT Labs. All rights reserved.
+// Adapted from PicoClaw architecture for NVIDIA Orin Nano deployment.
+// Public runtime repo: see pkg/config.RuntimeRepoURL
+// Public ecosystem hub: see pkg/config.HubRepoURL
 // License: MIT
 
 package main
@@ -91,8 +90,14 @@ Features:
   • Arduino Modulino® I2C: LEDs, buzzer, buttons, knob, sensors
   • Dexter deep research agent
   • Multi-channel: Telegram, Discord, CLI
-  • <10MB RAM, boots in <1s on ARM64`,
-		Example: "clawdbot agent -m \"What is SOL price?\"\nclawdbot ooda --interval 60\nclawdbot ooda --hw-bus 1\nclawdbot hardware scan\nclawdbot hardware demo",
+  • <10MB RAM, boots in <1s on ARM64
+
+Public surfaces:
+  • Runtime repo: github.com/Solizardking/clawdbot-go
+  • Ecosystem hub: github.com/solizardking/solana-clawd
+  • x402 gateway: zk.x402.wtf
+  • Terminal: cheshireterminal.ai`,
+		Example: "clawdbot agent -m \"What is SOL price?\"\nclawdbot ooda --interval 60\nclawdbot ooda --hw-bus 1\nclawdbot hardware scan\nclawdbot hardware demo\nclawdbot status",
 	}
 
 	cmd.AddCommand(
@@ -183,7 +188,13 @@ func NewGatewayCommand() *cobra.Command {
 			fmt.Printf("  Birdeye: %s\n", boolIcon(cfg.Solana.BirdeyeAPIKey != ""))
 			fmt.Printf("  Jupiter: %s\n", boolIcon(cfg.Solana.JupiterEndpoint != ""))
 
-			// TODO: Wire real gateway with OODA loop
+			fmt.Printf("\n%sPublic Surfaces:%s\n", colorTeal, colorReset)
+			fmt.Printf("  Runtime:   %s\n", config.RuntimeRepoURL)
+			fmt.Printf("  Hub:       %s\n", config.HubRepoURL)
+			fmt.Printf("  Gateway:   %s\n", config.GatewayURL)
+			fmt.Printf("  Terminal:  %s\n", config.TerminalURL)
+
+			// TODO: Wire real gateway runtime with OODA loop and channel server.
 			select {} // Block forever
 		},
 	}
@@ -258,6 +269,11 @@ func NewStatusCommand() *cobra.Command {
 			fmt.Printf("  Helius:      %s\n", boolIcon(cfg.Solana.HeliusAPIKey != ""))
 			fmt.Printf("  Birdeye:     %s\n", boolIcon(cfg.Solana.BirdeyeAPIKey != ""))
 			fmt.Printf("  Birdeye WSS: %s\n", boolIcon(cfg.Solana.BirdeyeWSSURL != ""))
+			fmt.Printf("\n%sPublic Surfaces:%s\n", colorTeal, colorReset)
+			fmt.Printf("  Runtime:   %s\n", config.RuntimeRepoURL)
+			fmt.Printf("  Hub:       %s\n", config.HubRepoURL)
+			fmt.Printf("  Gateway:   %s\n", config.GatewayURL)
+			fmt.Printf("  Terminal:  %s\n", config.TerminalURL)
 			fmt.Printf("  Jupiter:     %s\n", boolIcon(cfg.Solana.JupiterEndpoint != ""))
 			fmt.Printf("  Aster DEX:   %s\n", boolIcon(cfg.Solana.AsterAPIKey != ""))
 			fmt.Printf("  Wallet:      %s\n", truncate(cfg.Solana.WalletPubkey, 20))
@@ -1154,7 +1170,7 @@ func buildProvider(cfg *config.Config) providers.LLMProvider {
 		entry := cfg.ModelList[0]
 		base := entry.APIBase
 		if base == "" {
-			base = "https://clawdrouter-zk.fly.dev/v1"
+			base = config.ZkRouterBaseURL
 		}
 		key := entry.APIKey
 		if key == "" {

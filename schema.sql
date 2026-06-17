@@ -3,6 +3,9 @@
 -- Run this in your Supabase SQL Editor to create all tables.
 -- Covers: memory, trades, market data, research, strategy,
 --         agents, experiments, and wallets.
+-- Public runtime repo: https://github.com/Solizardking/clawdbot-go
+-- Public ecosystem hub: https://github.com/solizardking/solana-clawd
+-- Public gateway / terminal: https://zk.x402.wtf / https://cheshireterminal.ai
 -- ============================================================
 
 -- Extensions

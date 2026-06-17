@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/8bitlabs/clawdbot/pkg/config"
 )
 
 const banner = `
@@ -30,13 +32,6 @@ const banner = `
   ║       🦞 ClawdBot OS — Web Console           ║
   ║   Sentient Solana Trading Intelligence       ║
   ╚══════════════════════════════════════════════╝`
-
-const (
-	runtimeRepoURL = "https://github.com/Solizardking/clawdbot-go"
-	hubRepoURL     = "https://github.com/solizardking/solana-clawd"
-	gatewayURL     = "https://zk.x402.wtf"
-	terminalURL    = "https://cheshireterminal.ai"
-)
 
 func main() {
 	port := flag.String("port", "18800", "Port to listen on")
@@ -122,7 +117,7 @@ func main() {
 	mux.HandleFunc("/api/connectors", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		connectors := []map[string]any{
-			{"name": "x402 Gateway", "status": urlStatus(os.Getenv("ZKROUTER_BASE_URL"), "https://clawdrouter-zk.fly.dev/v1"), "type": "gateway"},
+			{"name": "x402 Gateway", "status": urlStatus(os.Getenv("ZKROUTER_BASE_URL"), config.ZkRouterBaseURL), "type": "gateway"},
 			{"name": "Clawd Terminal", "status": "public", "type": "terminal"},
 			{"name": "Helius", "status": envStatus("HELIUS_API_KEY"), "type": "rpc"},
 			{"name": "Birdeye", "status": envStatus("BIRDEYE_API_KEY"), "type": "analytics"},
@@ -137,10 +132,10 @@ func main() {
 	mux.HandleFunc("/api/ecosystem", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
-			"runtime_repo": runtimeRepoURL,
-			"hub_repo":     hubRepoURL,
-			"gateway":      gatewayURL,
-			"terminal":     terminalURL,
+			"runtime_repo": config.RuntimeRepoURL,
+			"hub_repo":     config.HubRepoURL,
+			"gateway":      config.GatewayURL,
+			"terminal":     config.TerminalURL,
 		})
 	})
 
@@ -228,10 +223,10 @@ func urlStatus(value, expected string) string {
 
 func ecosystemLinks() map[string]string {
 	return map[string]string{
-		"runtime_repo": runtimeRepoURL,
-		"hub_repo":     hubRepoURL,
-		"gateway":      gatewayURL,
-		"terminal":     terminalURL,
+		"runtime_repo": config.RuntimeRepoURL,
+		"hub_repo":     config.HubRepoURL,
+		"gateway":      config.GatewayURL,
+		"terminal":     config.TerminalURL,
 	}
 }
 

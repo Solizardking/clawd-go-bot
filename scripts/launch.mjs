@@ -12,6 +12,10 @@ import https from 'https';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
+const RUNTIME_REPO = 'https://github.com/Solizardking/clawdbot-go';
+const HUB_REPO = 'https://github.com/solizardking/solana-clawd';
+const GATEWAY_URL = 'https://zk.x402.wtf';
+const TERMINAL_URL = 'https://cheshireterminal.ai';
 
 // ── Colors ───────────────────────────────────────────────────────────
 const C = {
@@ -85,7 +89,11 @@ function run(cmd, opts = {}) {
     const output = execSync(cmd, {
       cwd: opts.cwd || ROOT,
       stdio: opts.stdio || 'pipe',
-      env: { ...process.env, ...opts.env },
+      env: {
+        ...process.env,
+        GOCACHE: process.env.GOCACHE || resolve(ROOT, '.cache', 'go-build'),
+        ...opts.env,
+      },
       timeout: opts.timeout || 120_000,
     }).toString().trim();
     return { ok: true, output };
@@ -233,7 +241,7 @@ async function main() {
 
   if (!env.loaded) {
     console.log(`    ${C.red}✗${C.reset} No .env file found — creating from .env.example`);
-    const example = resolve(ROOT, 'clawdbot-go', '.env.example');
+    const example = resolve(ROOT, '.env.example');
     if (existsSync(example)) {
       const content = readFileSync(example, 'utf-8');
       writeFileSync(resolve(ROOT, '.env'), content);
@@ -406,6 +414,11 @@ async function main() {
   console.log(`${C.dim}    │${C.white}    ./build/clawdbot solana research <mint>${C.dim}                      │${C.reset}`);
   console.log(`${C.dim}    │${C.white}    ./build/clawdbot ooda --interval 60${C.dim}                          │${C.reset}`);
   console.log(`${C.dim}    │${C.white}    ./build/clawdbot-web${C.dim}                                        │${C.reset}`);
+  console.log(`${C.dim}    │${C.reset}                                                              ${C.dim}│${C.reset}`);
+  console.log(`${C.dim}    │${C.teal}  Runtime:${C.dim} ${RUNTIME_REPO.padEnd(48)}${C.dim}│${C.reset}`);
+  console.log(`${C.dim}    │${C.teal}  Hub:${C.dim}     ${HUB_REPO.padEnd(48)}${C.dim}│${C.reset}`);
+  console.log(`${C.dim}    │${C.teal}  Gateway:${C.dim} ${GATEWAY_URL.padEnd(48)}${C.dim}│${C.reset}`);
+  console.log(`${C.dim}    │${C.teal}  Terminal:${C.dim}${TERMINAL_URL.padEnd(48)}${C.dim}│${C.reset}`);
   console.log(`${C.dim}    │${C.reset}                                                              ${C.dim}│${C.reset}`);
   console.log(`${C.dim}    │${C.purple}  🦞 $CLAWD :: Droids Lead The Way${C.dim}                              │${C.reset}`);
   console.log(`${C.dim}    │${C.reset}                                                              ${C.dim}│${C.reset}`);

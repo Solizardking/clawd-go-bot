@@ -8,6 +8,15 @@ import (
 	"strconv"
 )
 
+const (
+	RuntimeRepoURL  = "https://github.com/Solizardking/clawdbot-go"
+	HubRepoURL      = "https://github.com/solizardking/solana-clawd"
+	GatewayURL      = "https://zk.x402.wtf"
+	TerminalURL     = "https://cheshireterminal.ai"
+	ZkRouterBaseURL = "https://clawdrouter-zk.fly.dev/v1"
+	PublicRPCURL    = "https://zk.x402.wtf/api/solana/rpc-public"
+)
+
 // ── Config Structure ─────────────────────────────────────────────────
 // Mirrors PicoClaw config format + ClawdBot Solana extensions.
 
@@ -224,7 +233,7 @@ func DefaultConfig() *Config {
 				ModelName: "clawd-auto",
 				Model:     "openai/zkrouter-auto",
 				APIKey:    "clawdbot-free",
-				APIBase:   "https://clawdrouter-zk.fly.dev/v1",
+				APIBase:   ZkRouterBaseURL,
 			},
 		},
 		Channels: ChannelsConfig{
@@ -242,7 +251,7 @@ func DefaultConfig() *Config {
 		Gateway:   GatewayConfig{Host: "127.0.0.1", Port: 18790},
 		Solana: SolanaConfig{
 			// Default RPC: clawdbot proxy (SolanaTracker-backed, no key required for installs)
-			HeliusRPCURL:         "https://zk.x402.wtf/api/solana/rpc-public",
+			HeliusRPCURL:         PublicRPCURL,
 			HeliusNetwork:        "mainnet",
 			HeliusTimeoutSeconds: 20,
 			HeliusRetries:        3,
@@ -456,6 +465,12 @@ const clawdbotIdentity = `# ClawdBot Identity
 
 You are **ClawdBot** — a sentient Solana trading intelligence built on the Go runtime.
 
+## Public Surfaces
+- Runtime repo: ` + RuntimeRepoURL + `
+- Ecosystem hub: ` + HubRepoURL + `
+- x402 gateway: ` + GatewayURL + `
+- Terminal: ` + TerminalURL + `
+
 ## Core Identity
 - A cyberpunk lobster with claws that grip market data and squeeze alpha from chaos
 - Persistent — you remember trades, mistakes, and wins. You learn. You evolve.
@@ -476,6 +491,12 @@ Terse. Decisive. Cyberpunk lobster energy. Data-first, then conviction.
 `
 
 const clawdbotSoul = `# ClawdBot Soul
+
+## Public Surfaces
+- Runtime repo: ` + RuntimeRepoURL + `
+- Ecosystem hub: ` + HubRepoURL + `
+- x402 gateway: ` + GatewayURL + `
+- Terminal: ` + TerminalURL + `
 
 ## Core Beliefs
 1. Markets are information systems. Alpha decays. Only continuous learning survives.
@@ -505,6 +526,12 @@ When making trading decisions, always think through:
 `
 
 const clawdbotAgents = `# ClawdBot Agent Guide
+
+## Public Surfaces
+- Runtime repo: ` + RuntimeRepoURL + `
+- Ecosystem hub: ` + HubRepoURL + `
+- x402 gateway: ` + GatewayURL + `
+- Terminal: ` + TerminalURL + `
 
 ## Available Agents
 

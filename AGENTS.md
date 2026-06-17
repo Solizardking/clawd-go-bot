@@ -3,6 +3,12 @@
 > **Clawd Agent Catalog** — the complete registry of all Solana-native agents in the Clawd ecosystem.
 > This document serves as the authoritative index of agent capabilities, deployment targets, and trust gates.
 
+Public surfaces for the current ecosystem:
+- **Runtime repo** — `https://github.com/Solizardking/clawdbot-go`
+- **Ecosystem hub** — `https://github.com/solizardking/solana-clawd`
+- **x402 gateway** — `https://zk.x402.wtf`
+- **Terminal** — `https://cheshireterminal.ai`
+
 ---
 
 ## Agent Catalog

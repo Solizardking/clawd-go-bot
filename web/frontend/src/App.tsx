@@ -18,6 +18,12 @@ interface StatusInfo {
   go_arch: string
   num_cpu: number
   goroutines: number
+  public_links?: {
+    runtime_repo: string
+    hub_repo: string
+    gateway: string
+    terminal: string
+  }
 }
 
 interface HealthInfo {
@@ -39,12 +45,20 @@ interface EnvInfo {
   SHELL: string
 }
 
+interface EcosystemInfo {
+  runtime_repo: string
+  hub_repo: string
+  gateway: string
+  terminal: string
+}
+
 export default function App() {
   const [status, setStatus] = useState<StatusInfo | null>(null)
   const [health, setHealth] = useState<HealthInfo | null>(null)
   const [connectors, setConnectors] = useState<Connector[]>([])
   const [packages, setPackages] = useState<PackageInfo[]>([])
   const [envInfo, setEnvInfo] = useState<EnvInfo | null>(null)
+  const [ecosystem, setEcosystem] = useState<EcosystemInfo | null>(null)
   const [configText, setConfigText] = useState<string>('')
   const [showConfig, setShowConfig] = useState(false)
   const [logs, setLogs] = useState<string[]>(['🦞 ClawdBot Console ready.'])
@@ -57,6 +71,7 @@ export default function App() {
       fetch('/api/connectors').then(r => r.json()).then(setConnectors).catch(() => {})
       fetch('/api/packages').then(r => r.json()).then(setPackages).catch(() => {})
       fetch('/api/env').then(r => r.json()).then(setEnvInfo).catch(() => {})
+      fetch('/api/ecosystem').then(r => r.json()).then(setEcosystem).catch(() => {})
     }
     fetchAll()
     const interval = setInterval(fetchAll, 10000)
@@ -152,6 +167,25 @@ export default function App() {
           </div>
         </div>
 
+        {/* Ecosystem Panel */}
+        <div className="panel">
+          <h2>Ecosystem</h2>
+          {ecosystem ? (
+            <div className="env-list">
+              {Object.entries(ecosystem).map(([key, val]) => (
+                <div key={key} className="env-row">
+                  <span className="env-key">{key}</span>
+                  <a className="env-val" href={val} target="_blank" rel="noreferrer">
+                    {val}
+                  </a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{color:'var(--text-dim)'}}>Loading ecosystem links...</div>
+          )}
+        </div>
+
         {/* Go Packages Panel */}
         <div className="panel">
           <h2>Go Packages ({packages.length})</h2>
@@ -183,6 +217,23 @@ export default function App() {
             </div>
           ) : (
             <div style={{color:'var(--text-dim)'}}>Loading environment...</div>
+          )}
+        </div>
+
+        {/* Ecosystem Panel */}
+        <div className="panel">
+          <h2>Ecosystem</h2>
+          {ecosystem ? (
+            <div className="env-list">
+              {Object.entries(ecosystem).map(([key, val]) => (
+                <div key={key} className="env-row">
+                  <span className="env-key">{key}</span>
+                  <a className="env-val" href={val} target="_blank" rel="noreferrer">{val}</a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{color:'var(--text-dim)'}}>Loading ecosystem links...</div>
           )}
         </div>
 

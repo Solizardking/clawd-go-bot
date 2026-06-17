@@ -20,6 +20,9 @@ cd "$ROOT"
 echo ""
 echo -e "${GREEN}    🦞 ClawdBot Go — One-Shot Start${RESET}"
 echo -e "${DIM}    ────────────────────────────────${RESET}"
+echo -e "${DIM}    Runtime: github.com/Solizardking/clawdbot-go${RESET}"
+echo -e "${DIM}    Hub:     github.com/solizardking/solana-clawd${RESET}"
+echo -e "${DIM}    Gateway: zk.x402.wtf · Terminal: cheshireterminal.ai${RESET}"
 echo ""
 
 # ── Check Node.js ─────────────────────────────────────────────────
