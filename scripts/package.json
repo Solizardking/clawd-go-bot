@@ -1,0 +1,9 @@
+{
+  "name": "clawdbot-launcher",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "unicode-animations": "^1.0.3"
+  }
+}
