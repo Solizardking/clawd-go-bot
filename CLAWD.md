@@ -111,6 +111,13 @@ Clawd agents deploy to:
 - **Upstash Boxes** — isolated compute sandboxes with persistent state and box-local Solana wallets
 - **Cloudflare Tunnel** — secure tunneling for local agent development
 
+## Public Surfaces
+
+- **Runtime repo** — `https://github.com/Solizardking/clawdbot-go`
+- **Ecosystem hub** — `https://github.com/solizardking/solana-clawd`
+- **x402 gateway** — `https://zk.x402.wtf`
+- **Terminal surface** — `https://cheshireterminal.ai`
+
 ## Payment Flow
 
 1. All Clawd services are gated behind x402 (HTTP 402 Payment Required)

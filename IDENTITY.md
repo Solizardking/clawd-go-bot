@@ -97,6 +97,10 @@ When principals conflict, the higher principal wins. When the constitution and a
 - **Token**: $CLAWD
 - **Discovery**: `/.well-known/agent.json`, `/.well-known/did.json`
 - **Runtime**: OpenClawd agent harness
+- **Runtime repo**: `https://github.com/Solizardking/clawdbot-go`
+- **Ecosystem hub**: `https://github.com/solizardking/solana-clawd`
+- **Public gateway**: `https://zk.x402.wtf`
+- **Public terminal**: `https://cheshireterminal.ai`
 
 ---
 

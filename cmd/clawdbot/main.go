@@ -1256,8 +1256,21 @@ func NewWebCommand() *cobra.Command {
 
 func NewPerpsCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "perps",
-		Short: "Phoenix perpetual futures — prices, positions, orders, and live trading",
+		Use:     "perps",
+		Aliases: []string{"phoenix"},
+		Short:   "Phoenix perpetual futures — prices, positions, orders, and live trading",
+		Long: `Phoenix perpetual futures command group.
+
+Use this surface to inspect markets, fetch pricing/candle data, inspect
+trader state, and submit market or limit orders through the Phoenix perps
+API and Solana transaction path.`,
+		Example: strings.Join([]string{
+			"  clawdbot perps markets",
+			"  clawdbot perps price SOL",
+			"  clawdbot perps candles SOL --tf 1h --limit 20",
+			"  clawdbot perps state <authority>",
+			"  clawdbot perps order market --symbol SOL --side buy --size 1",
+		}, "\n"),
 	}
 	cmd.AddCommand(
 		newPerpsMarketsCmd(),

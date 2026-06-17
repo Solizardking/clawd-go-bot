@@ -1,5 +1,11 @@
 # ClawdBot Research Program v1.0
 
+This file governs the strategy-research loop for the Go runtime in
+`github.com/Solizardking/clawdbot-go`. Public discovery for the wider
+Clawd ecosystem lives at `github.com/solizardking/solana-clawd`, while
+the public x402 gateway and terminal surfaces live at `https://zk.x402.wtf`
+and `https://cheshireterminal.ai`.
+
 ## Mission
 Autonomously discover the optimal Solana trading strategy through systematic experimentation.
 One experiment = one parameter mutation + backtest + evaluation.

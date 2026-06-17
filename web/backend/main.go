@@ -31,6 +31,13 @@ const banner = `
   ║   Sentient Solana Trading Intelligence       ║
   ╚══════════════════════════════════════════════╝`
 
+const (
+	runtimeRepoURL = "https://github.com/Solizardking/clawdbot-go"
+	hubRepoURL     = "https://github.com/solizardking/solana-clawd"
+	gatewayURL     = "https://zk.x402.wtf"
+	terminalURL    = "https://cheshireterminal.ai"
+)
+
 func main() {
 	port := flag.String("port", "18800", "Port to listen on")
 	public := flag.Bool("public", false, "Listen on all interfaces (0.0.0.0) instead of localhost only")
@@ -87,6 +94,7 @@ func main() {
 			"go_arch":      runtime.GOARCH,
 			"num_cpu":      runtime.NumCPU(),
 			"goroutines":   runtime.NumGoroutine(),
+			"public_links": ecosystemLinks(),
 		})
 	})
 
@@ -114,6 +122,8 @@ func main() {
 	mux.HandleFunc("/api/connectors", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		connectors := []map[string]any{
+			{"name": "x402 Gateway", "status": urlStatus(os.Getenv("ZKROUTER_BASE_URL"), "https://clawdrouter-zk.fly.dev/v1"), "type": "gateway"},
+			{"name": "Clawd Terminal", "status": "public", "type": "terminal"},
 			{"name": "Helius", "status": envStatus("HELIUS_API_KEY"), "type": "rpc"},
 			{"name": "Birdeye", "status": envStatus("BIRDEYE_API_KEY"), "type": "analytics"},
 			{"name": "Jupiter", "status": envStatus("JUPITER_API_KEY"), "type": "swap"},
@@ -122,6 +132,16 @@ func main() {
 			{"name": "Supabase", "status": envStatus("SUPABASE_URL"), "type": "database"},
 		}
 		json.NewEncoder(w).Encode(connectors)
+	})
+
+	mux.HandleFunc("/api/ecosystem", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"runtime_repo": runtimeRepoURL,
+			"hub_repo":     hubRepoURL,
+			"gateway":      gatewayURL,
+			"terminal":     terminalURL,
+		})
 	})
 
 	// API: Packages — list all Go packages in the project
@@ -194,6 +214,25 @@ func envStatus(key string) string {
 		return "connected"
 	}
 	return "not_configured"
+}
+
+func urlStatus(value, expected string) string {
+	if strings.TrimSpace(value) == "" {
+		return "default_public"
+	}
+	if strings.TrimSpace(value) == expected {
+		return "default_public"
+	}
+	return "custom"
+}
+
+func ecosystemLinks() map[string]string {
+	return map[string]string{
+		"runtime_repo": runtimeRepoURL,
+		"hub_repo":     hubRepoURL,
+		"gateway":      gatewayURL,
+		"terminal":     terminalURL,
+	}
 }
 
 func getLocalIP() string {
