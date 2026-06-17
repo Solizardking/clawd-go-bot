@@ -208,7 +208,7 @@ func DefaultConfig() *Config {
 			Defaults: AgentDefaults{
 				Workspace:           "~/.clawdbot/workspace",
 				RestrictToWorkspace: true,
-				ModelName:           "gpt4",
+				ModelName:           "clawd-auto",
 				MaxTokens:           8192,
 				Temperature:         0.7,
 				MaxToolIterations:   20,
@@ -216,9 +216,12 @@ func DefaultConfig() *Config {
 		},
 		ModelList: []ModelEntry{
 			{
-				ModelName: "gpt4",
-				Model:     "openai/gpt-5.2",
-				APIKey:    "",
+				// Default: zkrouter — free AI for all clawdbot installs.
+				// No API key required. Override with your own OPENROUTER_API_KEY if desired.
+				ModelName: "clawd-auto",
+				Model:     "openai/zkrouter-auto",
+				APIKey:    "clawdbot-free",
+				APIBase:   "https://clawdrouter-zk.fly.dev/v1",
 			},
 		},
 		Channels: ChannelsConfig{
@@ -235,6 +238,8 @@ func DefaultConfig() *Config {
 		Heartbeat: HeartbeatConfig{Enabled: true, Interval: 30},
 		Gateway:   GatewayConfig{Host: "127.0.0.1", Port: 18790},
 		Solana: SolanaConfig{
+			// Default RPC: clawdbot proxy (SolanaTracker-backed, no key required for installs)
+			HeliusRPCURL:         "https://zk.x402.wtf/api/solana/rpc-public",
 			HeliusNetwork:        "mainnet",
 			HeliusTimeoutSeconds: 20,
 			HeliusRetries:        3,
@@ -423,6 +428,18 @@ func applyEnvOverrides(cfg *Config) {
 	}
 	if v := os.Getenv("OPENROUTER_API_KEY"); v != "" {
 		cfg.Providers.OpenRouter.APIKey = v
+	}
+	// zkrouter override — set via install script or manually
+	if v := os.Getenv("ZKROUTER_API_KEY"); v != "" && len(cfg.ModelList) > 0 {
+		cfg.ModelList[0].APIKey = v
+	}
+	if v := os.Getenv("ZKROUTER_BASE_URL"); v != "" && len(cfg.ModelList) > 0 {
+		cfg.ModelList[0].APIBase = v
+	}
+	// Clawdbot install ID — used for RPC auth header
+	if v := os.Getenv("CLAWDBOT_INSTALL_ID"); v != "" {
+		// stored for use by Solana RPC client as X-Clawdbot-Id header
+		_ = v
 	}
 }
 

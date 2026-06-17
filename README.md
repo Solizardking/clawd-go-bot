@@ -51,15 +51,33 @@ The system compiles to three standalone binaries that run on everything from NVI
 
 ## 🚀 Quick Start
 
-### One-Shot Install
+### One-Shot Install (recommended)
 
 ```bash
-git clone https://github.com/x402agent/clawdbot-go-main.git
-cd clawdbot-go-main
+curl -fsSL https://raw.githubusercontent.com/Solizardking/clawdbot-go/main/install.sh | bash
+```
 
-# Configure API keys
+> **Free AI included** — no API keys required to get started.  
+> The installer pre-configures [zkrouter](https://zk.x402.wtf) (free AI routing) and a  
+> SolanaTracker-backed RPC endpoint. Bring your own keys to lift rate limits.
+
+After install:
+
+```bash
+source ~/.clawdbot/.env          # load env vars
+clawdbot agent                   # AI REPL — free via zkrouter
+clawdbot ooda --sim              # paper trading mode
+clawdbot solana trending         # top Solana tokens
+```
+
+### Manual Install
+
+```bash
+git clone https://github.com/Solizardking/clawdbot-go.git
+cd clawdbot-go
+
+# Configure API keys (zkrouter + RPC pre-filled, add your own to unlock higher limits)
 cp .env.example .env
-# Edit .env with your keys
 
 # Run the animated launcher
 ./start.sh
