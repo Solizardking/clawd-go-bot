@@ -8,9 +8,12 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -21,6 +24,7 @@ import (
 	"github.com/8bitlabs/clawdbot/pkg/agent"
 	"github.com/8bitlabs/clawdbot/pkg/config"
 	"github.com/8bitlabs/clawdbot/pkg/hardware"
+	"github.com/8bitlabs/clawdbot/pkg/providers"
 	"github.com/8bitlabs/clawdbot/pkg/solana"
 )
 
@@ -99,6 +103,7 @@ Features:
 		NewSolanaCommand(),
 		NewHardwareCommand(),
 		NewVersionCommand(),
+		NewWebCommand(),
 	)
 
 	return cmd
@@ -119,10 +124,18 @@ func NewAgentCommand() *cobra.Command {
 			}
 
 			if message != "" {
-				fmt.Printf("%s[CLAWDBOT]%s Processing: %s\n", colorGreen, colorReset, message)
-				// TODO: Wire to LLM provider from config
-				_ = cfg
-				fmt.Printf("%s[CLAWDBOT]%s Agent mode ready. Model: %s\n", colorGreen, colorReset, cfg.Agents.Defaults.ModelName)
+				fmt.Printf("%s[CLAWDBOT]%s Processing: %s\n\n", colorGreen, colorReset, message)
+				a, err := newClawdAgent(cfg)
+				if err != nil {
+					return fmt.Errorf("agent init: %w", err)
+				}
+				ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+				defer cancel()
+				answer, err := a.ProcessDirect(ctx, message)
+				if err != nil {
+					return fmt.Errorf("agent error: %w", err)
+				}
+				fmt.Printf("%s[CLAWDBOT]%s %s\n", colorGreen, colorReset, answer)
 				return nil
 			}
 
@@ -1132,24 +1145,61 @@ func (c *consoleHooks) OnHeartbeat(cycleCount, openPos int) {
 	fmt.Printf("%s[OODA]%s 💓 cycle=%d open=%d\n", colorDim, colorReset, cycleCount, openPos)
 }
 
+// ── Provider + Agent Helpers ─────────────────────────────────────────
+
+func buildProvider(cfg *config.Config) providers.LLMProvider {
+	if len(cfg.ModelList) > 0 {
+		entry := cfg.ModelList[0]
+		base := entry.APIBase
+		if base == "" {
+			base = "https://clawdrouter-zk.fly.dev/v1"
+		}
+		key := entry.APIKey
+		if key == "" {
+			key = "clawdbot-free"
+		}
+		return providers.NewOpenAICompatProvider(key, base)
+	}
+	return providers.NewOpenRouterProvider(cfg.Providers.OpenRouter.APIKey)
+}
+
+func newClawdAgent(cfg *config.Config) (*agent.ClawdAgent, error) {
+	model := "openai/zkrouter-auto"
+	if len(cfg.ModelList) > 0 && cfg.ModelList[0].Model != "" {
+		model = cfg.ModelList[0].Model
+	}
+	return agent.NewClawdAgent(agent.AgentConfig{
+		Model:         model,
+		Provider:      buildProvider(cfg),
+		MaxIterations: cfg.Agents.Defaults.MaxToolIterations,
+		MaxTokens:     cfg.Agents.Defaults.MaxTokens,
+		Temperature:   cfg.Agents.Defaults.Temperature,
+	})
+}
+
 // ── Interactive REPL ─────────────────────────────────────────────────
 
 func runInteractiveAgent(cfg *config.Config) error {
-	// Minimal REPL — real implementation will wire LLM + tools
-	reader := os.Stdin
-	buf := make([]byte, 4096)
+	a, err := newClawdAgent(cfg)
+	if err != nil {
+		return fmt.Errorf("agent init: %w", err)
+	}
+
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf("%s🦞 > %s", colorGreen, colorReset)
-		n, err := reader.Read(buf)
+		input, err := reader.ReadString('\n')
 		if err != nil {
 			return nil
 		}
-		input := string(buf[:n-1]) // trim newline
+		input = strings.TrimSpace(input)
 
 		switch {
 		case input == "exit" || input == "quit":
 			fmt.Printf("%s💤 ClawdBot sleeping. Vault saved.%s\n", colorDim, colorReset)
 			return nil
+		case input == "":
+			// skip empty
 		case input == "!trades":
 			fmt.Printf("%s📊 Trade history: (not yet implemented)%s\n", colorDim, colorReset)
 		case input == "!lessons":
@@ -1159,10 +1209,45 @@ func runInteractiveAgent(cfg *config.Config) error {
 		case len(input) > 8 && input[:8] == "!recall ":
 			fmt.Printf("%s🔍 Searching memory: %s%s\n", colorTeal, input[8:], colorReset)
 		default:
-			fmt.Printf("%s[CLAWDBOT]%s Processing with %s...\n", colorGreen, colorReset, cfg.Agents.Defaults.ModelName)
-			fmt.Printf("%s(LLM integration pending — connect your API keys in config)%s\n", colorDim, colorReset)
+			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			answer, err := a.ProcessDirect(ctx, input)
+			cancel()
+			if err != nil {
+				fmt.Printf("%s[ERROR]%s %v\n\n", colorRed, colorReset, err)
+			} else {
+				fmt.Printf("\n%s[CLAWDBOT]%s %s\n\n", colorGreen, colorReset, answer)
+			}
 		}
 	}
+}
+
+// ── Web Command ──────────────────────────────────────────────────────
+
+func NewWebCommand() *cobra.Command {
+	var port string
+	var public bool
+
+	cmd := &cobra.Command{
+		Use:   "web",
+		Short: "Start ClawdBot web console (dashboard + REST API, default :18800)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("%s🦞 ClawdBot Web Console%s\n", colorGreen, colorReset)
+			fmt.Printf("%s  Dashboard → http://localhost:%s%s\n", colorTeal, port, colorReset)
+			fmt.Printf("%s  Config:     %s%s\n\n", colorDim, config.DefaultConfigPath(), colorReset)
+
+			webArgs := []string{"run", "./web/backend/", "-port", port}
+			if public {
+				webArgs = append(webArgs, "-public")
+			}
+			c := exec.Command("go", webArgs...)
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			return c.Run()
+		},
+	}
+	cmd.Flags().StringVarP(&port, "port", "p", "18800", "Port to listen on")
+	cmd.Flags().BoolVar(&public, "public", false, "Listen on 0.0.0.0 instead of localhost")
+	return cmd
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────

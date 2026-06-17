@@ -94,13 +94,16 @@ make build         # CLI binary only
 make all           # CLI + TUI
 make cross         # All platforms (x86, ARM64, RISC-V, macOS)
 
-# Frontend (optional)
+# Frontend (optional — required for web console UI)
 cd web/frontend && npm install && npm run build && cd ../..
 
 # Run
 ./build/clawdbot version
+./build/clawdbot agent -m "What is SOL price?"   # single-shot AI query
+./build/clawdbot agent                            # interactive REPL
 ./build/clawdbot solana trending
 ./build/clawdbot ooda --sim --interval 60
+./build/clawdbot web                              # dashboard → http://localhost:18800
 ```
 
 ---

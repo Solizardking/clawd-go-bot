@@ -79,6 +79,16 @@ func NewOpenRouterProvider(apiKey string) *OpenRouterProvider {
 	}
 }
 
+// NewOpenAICompatProvider creates an OpenRouter-compatible provider pointing at any
+// OpenAI-format base URL (e.g. zkrouter, local Ollama, custom proxy).
+func NewOpenAICompatProvider(apiKey, baseURL string) *OpenRouterProvider {
+	return &OpenRouterProvider{
+		apiKey:  apiKey,
+		baseURL: baseURL,
+		client:  &http.Client{Timeout: 120 * time.Second},
+	}
+}
+
 func (p *OpenRouterProvider) Name() string { return "openrouter" }
 
 func (p *OpenRouterProvider) Chat(ctx context.Context, opts ChatOptions) (*Response, error) {
