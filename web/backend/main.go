@@ -25,6 +25,9 @@ import (
 	"time"
 
 	"github.com/8bitlabs/clawdbot/pkg/config"
+	"github.com/8bitlabs/clawdbot/pkg/doctor"
+	"github.com/8bitlabs/clawdbot/pkg/laws"
+	"github.com/8bitlabs/clawdbot/pkg/trading"
 )
 
 const banner = `
@@ -139,6 +142,36 @@ func main() {
 		})
 	})
 
+	mux.HandleFunc("/api/laws", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(laws.Six)
+	})
+
+	mux.HandleFunc("/api/trading/cockpit", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, err := loadRuntimeConfig(absPath)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(trading.BuildCockpitReport(cfg, time.Now()))
+	})
+
+	mux.HandleFunc("/api/doctor", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, err := loadRuntimeConfig(absPath)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(doctor.Run(doctor.Options{
+			Config:        cfg,
+			ConfigPath:    absPath,
+			WorkspacePath: config.DefaultWorkspacePath(),
+			ProjectRoot:   projectRoot,
+		}))
+	})
+
 	// API: Packages — list all Go packages in the project
 	mux.HandleFunc("/api/packages", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -219,6 +252,21 @@ func urlStatus(value, expected string) string {
 		return "default_public"
 	}
 	return "custom"
+}
+
+func loadRuntimeConfig(path string) (*config.Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return config.DefaultConfig(), nil
+		}
+		return nil, err
+	}
+	cfg := config.DefaultConfig()
+	if err := json.Unmarshal(data, cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func ecosystemLinks() map[string]string {
@@ -360,7 +408,7 @@ a:hover{text-decoration:underline}
 <div class="container">
   <h1>🦞 ClawdBot OS</h1>
   <p class="status">Web Console Running</p>
-  <p>API: <a href="/api/status">/api/status</a> | <a href="/api/connectors">/api/connectors</a> | <a href="/api/health">/api/health</a> | <a href="/api/packages">/api/packages</a> | <a href="/api/env">/api/env</a></p>
+  <p>API: <a href="/api/status">/api/status</a> | <a href="/api/connectors">/api/connectors</a> | <a href="/api/trading/cockpit">/api/trading/cockpit</a> | <a href="/api/laws">/api/laws</a> | <a href="/api/doctor">/api/doctor</a></p>
   <p class="info">Build the frontend with: cd web/frontend && npm run build</p>
 </div>
 </body>

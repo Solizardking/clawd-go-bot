@@ -3,6 +3,7 @@
  */
 
 import type { PublicKey } from "@solana/web3.js";
+import type { LightSystemProgramCpi } from "@lightprotocol/stateless.js";
 
 /** 32-byte field element (alt-bn128). */
 export type Bytes32 = Uint8Array & { readonly length: 32 };

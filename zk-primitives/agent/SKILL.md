@@ -1,163 +1,141 @@
 ---
-name: clawd-zk-agent
-description: Drive the on-chain clawd-zk program (nullifiers, Groth16 proofs, Light Protocol compressed state) from a Clawd agent or REPL. Use when the user wants to attest a model, commit encrypted state, verify a proof, derive a nullifier, or ask a natural-language question that maps to any of those verbs.
+name: zk-shark-agent
+description: Drive ZK Shark, the Shark of All Streets agent, for nullifiers, Groth16 proofs, Light Protocol compressed state, model attestations, encrypted-state commitments, proof checks, nullifier derivation, and deterministic natural-language routing.
 when_to_use: |
   Use this skill whenever the request is one of:
-    - "attest this model with hash 0xab12… and proof.json"
+    - "attest this model with hash 0xab12... and proof.json"
     - "publish an attestation for my fine-tuned model"
-    - "commit this encrypted state blob to clawd-zk"
+    - "commit this encrypted state blob"
     - "verify this Groth16 proof against the publish inputs"
     - "derive a nullifier for context foo"
-    - "show me the clawd-zk config" / "inspect the zk agent"
-  Do NOT use it for: on-chain trading (→ clawd-pump), voice calls
-  (→ Hermes voice agent), or generic Solana RPC queries (→ Helius).
+    - "show me the ZK Shark config" / "inspect the zk shark agent"
+  Do not use it for on-chain trading, voice calls, or generic Solana RPC queries.
 inputs:
-  - modelHash            (optional, hex) — 32-byte model hash for attest intents
-  - payloadCommitment    (optional, hex) — 32-byte payload commitment for attest
-  - ciphertextCommitment (optional, hex) — 32-byte ciphertext commitment for commit
-  - stateVersion         (optional, number) — version number for commit (default 1)
-  - context              (optional, string) — domain-separated context tag
-  - proofPath            (optional, string) — path to a Groth16 proof JSON file
-  - proof                (optional, Groth16Proof) — inline proof if not loading from disk
+  - modelHash            (optional, hex) - 32-byte model hash for attest intents
+  - payloadCommitment    (optional, hex) - 32-byte payload commitment for attest
+  - ciphertextCommitment (optional, hex) - 32-byte ciphertext commitment for commit
+  - stateVersion         (optional, number) - version number for commit (default 1)
+  - context              (optional, string) - domain-separated context tag
+  - proofPath            (optional, string) - path to a Groth16 proof JSON file
+  - proof                (optional, Groth16Proof) - inline proof if not loading from disk
 outputs:
-  - nullifierHex            (string) — the derived 32-byte nullifier (hex)
-  - publicInputsPackedHex   (string) — the canonical 32-byte-per-field public input vector
-  - instruction             (TransactionInstruction) — ready-to-sign Solana instruction
-  - signature               (string, optional) — the on-chain tx signature when a signer is attached
-  - summary                 (string) — human-readable summary of the operation
+  - nullifierHex            (string) - the derived 32-byte nullifier
+  - publicInputsPackedHex   (string) - the canonical public input vector
+  - instruction             (TransactionInstruction) - ready-to-sign Solana instruction
+  - signature               (string, optional) - transaction signature when a signer is attached
+  - summary                 (string) - human-readable operation summary
 env:
-  required: [CLAWD_ZK_RPC_URL]
+  required: [ZK_SHARK_RPC_URL]
   optional:
-    - CLAWD_ZK_PROGRAM_ID
-    - CLAWD_ZK_PHOTON_URL
-    - CLAWD_ZK_API_KEY
-    - CLAWD_ZK_COMMITMENT
-    - CLAWD_ZK_KEYPAIR
-    - CLAWD_ZK_NETWORK
+    - ZK_SHARK_PROGRAM_ID
+    - ZK_SHARK_PHOTON_URL
+    - ZK_SHARK_API_KEY
+    - ZK_SHARK_COMMITMENT
+    - ZK_SHARK_KEYPAIR
+    - ZK_SHARK_NETWORK
 ---
 
-# clawd-zk-agent
+# ZK Shark Agent
 
-A Clawd agent that drives the on-chain **clawd-zk** program
-(Anchor / Solana). The program provides three primitives:
-
-1. **`publish_attestation`** — nullifier-gated Groth16-verified attestation.
-2. **`commit_encrypted_state`** — Groth16-verified commitment to encrypted state.
-3. **`consume_attestation`** — Groth16-verified consume (one-shot read).
-
-This skill wraps the low-level `@clawd/zk-client` SDK and exposes the
-four operations a Clawd agent would actually want to call:
+ZK Shark is the Shark of All Streets agent, named in honor of zk Shark,
+the legend of ordinals. It wraps the lower-level `@clawd/zk-client` SDK
+and exposes the four operations an agent needs most:
 
 | Method | Purpose |
 |---|---|
-| `agent.attestModel({ modelHash, payloadCommitment, proof, context })` | `publish_attestation` |
-| `agent.commitEncryptedState({ modelHash, ciphertextCommitment, stateVersion, proof })` | `commit_encrypted_state` |
-| `agent.verifyProof({ proof, publicInputs?, … })` | Off-chain Groth16 sanity check |
-| `agent.computeNullifierFor(secret, context)` | Deterministic 32-byte nullifier |
+| `agent.attestModel({ modelHash, payloadCommitment, proof, context })` | Build a `publish_attestation` instruction. |
+| `agent.commitEncryptedState({ modelHash, ciphertextCommitment, stateVersion, proof })` | Build a `commit_encrypted_state` instruction. |
+| `agent.verifyProof({ proof, publicInputs?, ... })` | Off-chain Groth16 sanity check. |
+| `agent.computeNullifierFor(secret, context)` | Deterministic 32-byte nullifier. |
 
-Plus a **deterministic natural-language intent router**
-(`routeIntent(text, agent, ctx)`) so any Clawd component (REPL,
-MCP tool, Telegram bridge, voice agent) can call this skill with
-free-form text and get back a typed `{ intent, action, args,
-confidence, rationale }` plan.
+The class name is `ZkSharkAgent`. `ClawdZkAgent` remains exported as a
+compatibility alias.
 
-## Quick start (for an LLM calling this skill)
+## Quick Start
 
 ```ts
-import { ClawdZkAgent, routeIntent, dispatchRoute } from "@clawd/zk-agent";
+import { ZkSharkAgent, routeIntent, dispatchRoute } from "@clawd/zk-shark-agent";
 
-const agent = await ClawdZkAgent.fromEnv();
+const agent = await ZkSharkAgent.fromEnv();
 
-// 1. Route the user's request
 const route = routeIntent(
-  "attest this model 0xab12cd34… with my proof.json",
+  "attest this model 0xab12cd34... with my proof.json",
   agent,
-  { payloadCommitment: "0x" + "ab".repeat(32) },
+  { payloadCommitment: "0x" + "ab".repeat(32), proofPath: "./proof.json" },
 );
-//   → { intent: "attest-model", action: "attestModel", confidence: 0.9, ... }
 
-// 2. (Optional) Review the plan with the user
-console.log(route.rationale, route.args);
-
-// 3. Dispatch
 const result = await dispatchRoute(route, agent);
-//   → { nullifierHex, publicInputsPackedHex, instruction, signature?, summary }
+console.log(result);
 ```
 
-The router is **deterministic and rule-based** — no model calls, no
-network. It matches verbs in the input text and combines them with
-explicit `ctx` overrides to pick the right action.
+The router is deterministic and rule-based. It makes no model calls.
 
-## Recognised intents
+## Recognised Intents
 
-| Verb (regex) | Routed action | Required ctx |
+| Verb pattern | Routed action | Required context |
 |---|---|---|
 | `attest`, `attestation`, `publish`, `publish_attestation` | `attestModel` | `modelHash`, `payloadCommitment`, `proofPath` |
 | `commit`, `commit_state`, `encrypted state`, `ciphertext` | `commitEncryptedState` | `ciphertextCommitment`, `stateVersion`, `proofPath` |
 | `verify`, `check`, `validate` | `verifyProof` | `proofPath` |
 | `nullifier`, `derive`, `compute_nullifier` | `computeNullifier` | `context` |
-| `inspect`, `config`, `status`, `show` | `describe` | — |
-| `help`, `usage`, `how`, `what` | `help` | — |
-
-If multiple verbs match, the highest-weight one wins. If nothing
-matches, the router returns `help` with confidence 0.1.
+| `inspect`, `config`, `status`, `show` | `describe` | none |
+| `help`, `usage`, `how`, `what` | `help` | none |
 
 ## CLI
 
-The package also ships a binary `clawd-zk-agent` with the same verbs
-as subcommands. Useful for scripts, CI, and operators.
-
 ```bash
-clawd-zk-agent inspect
-clawd-zk-agent attest  <modelHash> <payloadCommitment> <proof.json> [--context "…"]
-clawd-zk-agent commit  <ciphertextCommitment> <stateVersion> <proof.json> [--model <modelHash>]
-clawd-zk-agent verify  <proof.json>
-clawd-zk-agent nullifier "context-tag"
-clawd-zk-agent ask    "natural language"
+zk-shark-agent inspect
+zk-shark-agent attest  <modelHash> <payloadCommitment> <proof.json> [--context "..."]
+zk-shark-agent commit  <ciphertextCommitment> <stateVersion> <proof.json> [--model <modelHash>]
+zk-shark-agent verify  <proof.json>
+zk-shark-agent nullifier "context-tag"
+zk-shark-agent ask     "natural language"
 ```
 
-The proof JSON shape:
+`shark-of-all-streets` is also available as a binary alias. The legacy
+`clawd-zk-agent` binary remains available for older scripts.
+
+The proof JSON shape is:
 
 ```json
 {
-  "a": "0x…",            // 64 bytes
-  "b": "0x…",            // 128 bytes
-  "c": "0x…",            // 64 bytes
-  "verifyingKey": "0x…"  // optional, variable length
+  "a": "0x...",
+  "b": "0x...",
+  "c": "0x...",
+  "verifyingKey": "0x..."
 }
 ```
 
-## When NOT to use this skill
+## Configuration
 
-- For perpetuals trading → use the `vulcan` skill family.
-- For real-time voice → use the `voice-call` skill family.
-- For a generic RPC query (balance, account info, transaction
-  lookup) → use the `helius` skill family.
-- For an action that needs the on-chain *verifier* (the real
-  pairing check) → drive `clawd-zk` directly via the program; this
-  skill only does off-chain preparation.
+Use `ZK_SHARK_RPC_URL` plus the optional `ZK_SHARK_*` variables declared
+in the frontmatter. Legacy `CLAWD_ZK_*` variables are still accepted as
+fallbacks.
 
-## Failure modes the agent should surface to the user
+Named program aliases:
 
-- `CLAWD_ZK_RPC_URL is not set` — tell the user to add it to
-  `~/.clawd-code/.env` or pass `rpcUrl` explicitly.
-- `Invalid CLAWD_ZK_PROGRAM_ID: …` — the value is not a base58 pubkey
-  and not a known alias. List the valid aliases
-  (`CLAWDZK_MAINNET` / `CLAWDZK_DEVNET` / `CLAWDZK_LOCALNET`).
-- `proof.a expected 64 bytes, got 63` — the proof JSON is malformed;
-  tell the user to re-export from the prover.
-- `nullifier secret must be at least 16 bytes` — supply a real key.
+| Alias | Purpose |
+|---|---|
+| `ZK_SHARK_MAINNET` | Default mainnet placeholder. |
+| `ZK_SHARK_DEVNET` | Devnet placeholder. |
+| `ZK_SHARK_LOCALNET` | Localnet placeholder. |
 
-## Cross-references
+Legacy `CLAWDZK_MAINNET`, `CLAWDZK_DEVNET`, and `CLAWDZK_LOCALNET` are
+also accepted.
 
-- The lower-level SDK is `@clawd/zk-client`
-  (see `zk-primitives/client/`).
-- The Anchor program is at `zk-primitives/programs/clawd-zk/`.
-- The deep dive (cost model, security assumptions, instruction
-  layouts) is in `zk-primitives/docs/ARCHITECTURE.md`.
-- Runtime/catalog wiring is in `zk-primitives/docs/INTEGRATION.md`.
-- Machine-readable package and trust-gate metadata is in
-  `zk-primitives/MANIFEST.json`.
-- The full agent catalog is at the repo root `AGENTS.md`.
-- The harness that drives every Clawd agent is `clawd-code/`
-  (Grok-first).
+## Failure Modes
+
+- `ZK_SHARK_RPC_URL is not set` - add it to the environment, or keep
+  using legacy `CLAWD_ZK_RPC_URL`.
+- `Invalid ZK_SHARK_PROGRAM_ID/CLAWD_ZK_PROGRAM_ID` - the value is not
+  a base58 pubkey and not a known alias.
+- `proof.a must be 64 bytes` - the proof JSON is malformed; re-export
+  from the prover.
+- `Secret must be at least 16 bytes` - supply a real nullifier secret.
+
+## Cross-References
+
+- Lower-level SDK: `zk-primitives/client/`
+- Anchor program: `zk-primitives/programs/clawd-zk/`
+- Architecture notes: `zk-primitives/docs/ARCHITECTURE.md`
+- Agent catalog: `AGENTS.md`

@@ -1,8 +1,8 @@
 /**
- * @clawd/zk-agent — public exports
+ * @clawd/zk-shark-agent - public exports
  *
- * The agent-shaped wrapper around `@clawd/zk-client`. Use this when you
- * want your Clawd agent (or REPL, or MCP tool) to be able to say
+ * The Shark of All Streets wrapper around `@clawd/zk-client`. Use this when you
+ * want your ZK Shark agent (or REPL, or MCP tool) to be able to say
  * "attest this model" / "commit this encrypted state" / "verify this
  * proof" without hand-rolling the underlying nullifier, Groth16, and
  * Light Protocol plumbing.
@@ -10,10 +10,10 @@
  * Quick start:
  *
  * ```ts
- * import { ClawdZkAgent } from "@clawd/zk-agent";
+ * import { ZkSharkAgent } from "@clawd/zk-shark-agent";
  * import { createSolanaRpc } from "@solana/kit";
  *
- * const agent = await ClawdZkAgent.fromEnv();
+ * const agent = await ZkSharkAgent.fromEnv();
  * const result = await agent.attestModel({
  *   modelHash: new Uint8Array(32),
  *   payloadCommitment: new Uint8Array(32),
@@ -23,14 +23,22 @@
  * console.log(result.signature);
  * ```
  *
- * The package also ships a `clawd-zk-agent` binary (see `src/cli.ts`)
+ * The package also ships a `zk-shark-agent` binary (see `src/cli.ts`)
  * that exposes the same operations as subcommands and as a
  * natural-language intent router.
  */
 
-export { ClawdZkAgent, type ClawdZkAgentOptions, type AttestModelResult, type CommitStateResult, type VerifyProofResult } from "./agent.js";
+export {
+  ZkSharkAgent,
+  ClawdZkAgent,
+  type ZkSharkAgentOptions,
+  type ClawdZkAgentOptions,
+  type AttestModelResult,
+  type CommitStateResult,
+  type VerifyProofResult,
+} from "./agent.js";
 export { routeIntent, type IntentRoute, type IntentContext, KNOWN_INTENTS } from "./intents.js";
-export { loadAgentConfig, type ZkAgentConfig, DEFAULT_PROGRAM_ID } from "./config.js";
+export { loadAgentConfig, type ZkSharkAgentConfig, type ZkAgentConfig, DEFAULT_PROGRAM_ID } from "./config.js";
 export { runCli } from "./cli.js";
 export {
   // Re-export the lower-level SDK so callers can drop down when they

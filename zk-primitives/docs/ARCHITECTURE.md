@@ -125,12 +125,6 @@ Four modules:
   `ClawdZkClient.commitEncryptedState(...)` returning ready-to-sign
   `TransactionInstruction`s.
 
-The agent wrapper in `zk-primitives/agent/` sits directly on top of
-this SDK and adds:
-- deterministic natural-language intent routing
-- offline-safe inspect / verify / nullifier ergonomics
-- canonical public-input reporting for both attestation and commit flows
-
 ## 4. Cryptographic Details
 
 ### 4.1 Nullifiers

@@ -1,8 +1,8 @@
 /**
- * ClawdZkAgent — agent-shaped wrapper around the ZK primitive SDK.
+ * ZkSharkAgent - the Shark of All Streets wrapper around the ZK primitive SDK.
  *
- * Exposes the four core operations a Clawd agent would want to do with
- * the `clawd-zk` program as named methods, and wires in the
+ * Exposes the four core operations a ZK Shark agent would want to do with
+ * the ZK program as named methods, and wires in the
  * nullifier / proof / Light Protocol plumbing automatically:
  *
  *   agent.attestModel(...)        — publish an attestation for a model
@@ -14,7 +14,7 @@
  * routing (see `./intents.ts`).
  *
  * ```ts
- * const agent = await ClawdZkAgent.fromEnv();
+ * const agent = await ZkSharkAgent.fromEnv();
  * const { signature, nullifier } = await agent.attestModel({
  *   modelHash: ...,
  *   payloadCommitment: ...,
@@ -34,7 +34,6 @@ import {
   ClawdZkClient,
   computeNullifier,
   verifyGroth16Offchain,
-  buildCommitPublicInputs,
   buildPublishPublicInputs,
   packPublicInputs,
   type Groth16Proof,
@@ -43,21 +42,23 @@ import {
   type CommitStateArgs,
 } from "@clawd/zk-client";
 
-import { loadAgentConfig, type ZkAgentConfig, DEFAULT_PROGRAM_ID } from "./config.js";
+import { loadAgentConfig, type ZkSharkAgentConfig, DEFAULT_PROGRAM_ID } from "./config.js";
 import { routeIntent, type IntentContext, type IntentRoute } from "./intents.js";
 
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
-export interface ClawdZkAgentOptions {
+export interface ZkSharkAgentOptions {
   /** Pre-built config. If omitted, the agent reads from `process.env`. */
-  config?: ZkAgentConfig;
+  config?: ZkSharkAgentConfig;
   /** Pre-built ClawdZkClient. If omitted, the agent constructs one. */
   client?: ClawdZkClient;
   /** Optional keypair for signing. */
   signer?: Keypair;
 }
+
+export type ClawdZkAgentOptions = ZkSharkAgentOptions;
 
 export interface AttestModelArgs {
   /** 32-byte hash identifying the model being attested to. */
@@ -108,9 +109,6 @@ export interface VerifyProofArgs {
   payloadCommitment?: Bytes32;
   nullifier?: Bytes32;
   attester?: Uint8Array;
-  ciphertextCommitment?: Bytes32;
-  stateVersion?: number | bigint;
-  committer?: Uint8Array;
 }
 
 export interface VerifyProofResult {
@@ -124,7 +122,7 @@ export interface VerifyProofResult {
 // Implementation
 // ---------------------------------------------------------------------------
 
-const CLAWD_BANNER = "🦞🔐 Clawd ZK Agent";
+const SHARK_BANNER = "ZK Shark - Shark of All Streets";
 
 function bytesToHex(b: Uint8Array): string {
   return Buffer.from(b).toString("hex");
@@ -164,20 +162,20 @@ async function loadProofFromFile(path: string): Promise<Groth16Proof> {
   };
 }
 
-export class ClawdZkAgent {
-  readonly config: ZkAgentConfig;
+export class ZkSharkAgent {
+  readonly config: ZkSharkAgentConfig;
   readonly client: ClawdZkClient;
   /** Optional signer; the agent can attest / commit without one (instruction-only). */
   signer?: Keypair;
 
-  private constructor(config: ZkAgentConfig, client: ClawdZkClient, signer?: Keypair) {
+  private constructor(config: ZkSharkAgentConfig, client: ClawdZkClient, signer?: Keypair) {
     this.config = config;
     this.client = client;
     this.signer = signer;
   }
 
   /** Construct from an explicit config + optional client + optional signer. */
-  static create(opts: ClawdZkAgentOptions): ClawdZkAgent {
+  static create(opts: ZkSharkAgentOptions): ZkSharkAgent {
     const config = opts.config ?? loadAgentConfig();
     const client =
       opts.client ??
@@ -188,29 +186,19 @@ export class ClawdZkAgent {
         apiKey: config.apiKey,
         commitment: config.commitment,
       });
-    return new ClawdZkAgent(config, client, opts.signer);
+    return new ZkSharkAgent(config, client, opts.signer);
   }
 
   /** Construct from environment variables. */
-  static async fromEnv(): Promise<ClawdZkAgent> {
+  static async fromEnv(): Promise<ZkSharkAgent> {
     const config = loadAgentConfig();
-    return ClawdZkAgent.fromLoadedConfig(config);
-  }
-
-  /** Construct from env when present, otherwise with offline-safe defaults. */
-  static async fromEnvOrDefaults(): Promise<ClawdZkAgent> {
-    const config = loadAgentConfig(process.env, { requireRpcUrl: false });
-    return ClawdZkAgent.fromLoadedConfig(config);
-  }
-
-  private static async fromLoadedConfig(config: ZkAgentConfig): Promise<ClawdZkAgent> {
     let signer: Keypair | undefined;
     if (config.keypairPath) {
       const raw = await readFile(resolvePath(config.keypairPath), "utf-8");
       const parsed = JSON.parse(raw) as number[];
       signer = Keypair.fromSecretKey(Uint8Array.from(parsed));
     }
-    return ClawdZkAgent.create({ config, signer });
+    return ZkSharkAgent.create({ config, signer });
   }
 
   /**
@@ -250,24 +238,12 @@ export class ClawdZkAgent {
           payloadCommitment: ensure32("payloadCommitment", args.payloadCommitment),
           nullifier: ensure32("nullifier", args.nullifier),
         });
-      } else if (
-        args.modelHash &&
-        args.ciphertextCommitment &&
-        args.stateVersion != null &&
-        args.committer
-      ) {
-        publicInputs = buildCommitPublicInputs({
-          committer: args.committer,
-          modelHash: ensure32("modelHash", args.modelHash),
-          ciphertextCommitment: ensure32("ciphertextCommitment", args.ciphertextCommitment),
-          stateVersion: args.stateVersion,
-        });
       }
     }
     if (!publicInputs) {
       return {
         ok: false,
-        reason: "Either `publicInputs` or publish inputs (attester + modelHash + payloadCommitment + nullifier) or commit inputs (committer + modelHash + ciphertextCommitment + stateVersion) must be provided.",
+        reason: "Either `publicInputs` or (attester + modelHash + payloadCommitment + nullifier) must be provided.",
       };
     }
     const result = verifyGroth16Offchain({ proof: args.proof, publicInputs });
@@ -322,7 +298,7 @@ export class ClawdZkAgent {
     );
 
     const summary = [
-      `${CLAWD_BANNER} attestModel`,
+      `${SHARK_BANNER} attestModel`,
       `  program       : ${this.config.programId.toBase58()}`,
       `  attester      : ${attesterPubkey.toBase58()}`,
       `  modelHash     : 0x${bytesToHex(modelHash)}`,
@@ -369,42 +345,34 @@ export class ClawdZkAgent {
       proof: args.proof,
     };
     const instruction = await this.client.commitEncryptedState(commitArgs);
-    const publicInputsPacked = packPublicInputs(
-      buildCommitPublicInputs({
-        committer: attesterPubkey.toBytes(),
-        modelHash,
-        ciphertextCommitment,
-        stateVersion,
-      }),
-    );
 
     const summary = [
-      `${CLAWD_BANNER} commitEncryptedState`,
+      `${SHARK_BANNER} commitEncryptedState`,
       `  program        : ${this.config.programId.toBase58()}`,
       `  committer      : ${attesterPubkey.toBase58()}`,
       `  modelHash      : 0x${bytesToHex(modelHash)}`,
       `  ciphertext     : 0x${bytesToHex(ciphertextCommitment)}`,
       `  stateVersion   : ${stateVersion.toString()}`,
-      `  public inputs  : 0x${bytesToHex(publicInputsPacked)}`,
     ].join("\n");
 
-    return { instruction, publicInputsPackedHex: bytesToHex(publicInputsPacked), summary };
+    return { instruction, publicInputsPackedHex: "", summary };
   }
 
   /**
    * Natural-language intent router. Recognises the same phrases that
-   * the `clawd-zk-agent` CLI exposes as subcommands and dispatches to
+   * the `zk-shark-agent` CLI exposes as subcommands and dispatches to
    * the matching method.
    */
   async runIntent(text: string, ctx: IntentContext = {}): Promise<IntentRoute> {
     return routeIntent(text, this, ctx);
   }
 
-  /** Pretty-print the active configuration (handy for `clawd-zk-agent inspect`). */
+  /** Pretty-print the active configuration (handy for `zk-shark-agent inspect`). */
   describe(): string {
+    const defaultSuffix = this.config.programId.equals(DEFAULT_PROGRAM_ID) ? "  (default)" : "";
     return [
-      `${CLAWD_BANNER} configuration`,
-      `  program        : ${this.config.programId.toBase58()}  ${this.config.programId.equals(DEFAULT_PROGRAM_ID) ? "(default)" : ""}`.trim(),
+      `${SHARK_BANNER} configuration`,
+      `  program        : ${this.config.programId.toBase58()}${defaultSuffix}`,
       `  network        : ${this.config.network}`,
       `  rpc            : ${this.config.rpcUrl}`,
       `  photon         : ${this.config.photonUrl}`,
@@ -438,8 +406,10 @@ function randomSecret(): Uint8Array {
   return out;
 }
 
+export { ZkSharkAgent as ClawdZkAgent };
+
 // Re-export for callers that want to build their own agent without
-// `ClawdZkAgent.create`.
+// `ZkSharkAgent.create`.
 export { DEFAULT_PROGRAM_ID };
 // Type-only re-exports so callers don't have to dig into @clawd/zk-client.
 export type { Groth16Proof, Bytes32 };

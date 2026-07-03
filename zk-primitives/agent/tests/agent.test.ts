@@ -1,5 +1,5 @@
 /**
- * Unit tests for @clawd/zk-agent.
+ * Unit tests for @clawd/zk-shark-agent.
  *
  * Pure-logic tests: no RPC calls, no signer. The tests exercise:
  *   - config loading (defaults + env overrides + bad values)
@@ -57,16 +57,6 @@ vi.mock("@clawd/zk-client", () => {
   }): Uint8Array[] {
     return [p.attester, p.modelHash, p.payloadCommitment, p.nullifier];
   }
-  function buildCommitPublicInputs(p: {
-    committer: Uint8Array;
-    modelHash: Uint8Array;
-    ciphertextCommitment: Uint8Array;
-    stateVersion: bigint | number;
-  }): Uint8Array[] {
-    const versionBytes = new Uint8Array(32);
-    new DataView(versionBytes.buffer).setBigUint64(0, BigInt(p.stateVersion), true);
-    return [p.committer, p.modelHash, p.ciphertextCommitment, versionBytes];
-  }
   function verifyGroth16Offchain(args: {
     proof: { a: Uint8Array; b: Uint8Array; c: Uint8Array; verifyingKey: Uint8Array };
     publicInputs: Uint8Array[];
@@ -87,7 +77,6 @@ vi.mock("@clawd/zk-client", () => {
     computeNullifier,
     packPublicInputs,
     buildPublishPublicInputs,
-    buildCommitPublicInputs,
     verifyGroth16Offchain,
   };
 });
@@ -98,11 +87,10 @@ import {
   type IntentRoute,
 } from "../src/intents.js";
 import { loadAgentConfig, DEFAULT_PROGRAM_ID } from "../src/config.js";
-import { ClawdZkAgent } from "../src/agent.js";
+import { ZkSharkAgent, ClawdZkAgent } from "../src/agent.js";
 import {
   packPublicInputs,
   buildPublishPublicInputs,
-  buildCommitPublicInputs,
   type Groth16Proof,
   type Bytes32,
 } from "@clawd/zk-client";
@@ -112,7 +100,7 @@ import { Buffer } from "node:buffer";
 const hexOf = (b: Uint8Array): string => Buffer.from(b).toString("hex");
 
 // Minimal stub agent (no RPC, no signer) — used by intent-router tests.
-function makeStubAgent(): ClawdZkAgent {
+function makeStubAgent(): ZkSharkAgent {
   const cfg = {
     rpcUrl: "https://example.invalid",
     programId: DEFAULT_PROGRAM_ID,
@@ -120,7 +108,7 @@ function makeStubAgent(): ClawdZkAgent {
     commitment: "confirmed" as const,
     network: "mainnet" as const,
   };
-  return ClawdZkAgent.create({ config: cfg });
+  return ZkSharkAgent.create({ config: cfg });
 }
 
 function fakeProof(): Groth16Proof {
@@ -133,52 +121,57 @@ function fakeProof(): Groth16Proof {
 }
 
 describe("loadAgentConfig", () => {
-  test("throws if CLAWD_ZK_RPC_URL is missing", () => {
-    expect(() => loadAgentConfig({})).toThrow(/CLAWD_ZK_RPC_URL/);
-  });
-
-  test("can fall back to an offline-safe default RPC for inspect-only flows", () => {
-    const cfg = loadAgentConfig({}, { requireRpcUrl: false });
-    expect(cfg.rpcUrl).toBe("http://127.0.0.1:8899");
-    expect(cfg.programId.toBase58()).toBe(DEFAULT_PROGRAM_ID.toBase58());
+  test("throws if ZK_SHARK_RPC_URL is missing", () => {
+    expect(() => loadAgentConfig({})).toThrow(/ZK_SHARK_RPC_URL/);
   });
 
   test("defaults programId to the canonical mainnet program", () => {
-    const cfg = loadAgentConfig({ CLAWD_ZK_RPC_URL: "https://example.invalid" });
+    const cfg = loadAgentConfig({ ZK_SHARK_RPC_URL: "https://example.invalid" });
     expect(cfg.programId.toBase58()).toBe(DEFAULT_PROGRAM_ID.toBase58());
     expect(cfg.commitment).toBe("confirmed");
     expect(cfg.network).toBe("mainnet");
   });
 
-  test("accepts named program aliases (CLAWDZK_DEVNET, …)", () => {
+  test("accepts named program aliases (ZK_SHARK_DEVNET)", () => {
     const cfg = loadAgentConfig({
-      CLAWD_ZK_RPC_URL: "https://devnet.example",
-      CLAWD_ZK_PROGRAM_ID: "CLAWDZK_DEVNET",
+      ZK_SHARK_RPC_URL: "https://devnet.example",
+      ZK_SHARK_PROGRAM_ID: "ZK_SHARK_DEVNET",
     });
+    expect(cfg.programId.toBase58()).not.toBe(DEFAULT_PROGRAM_ID.toBase58());
+  });
+
+  test("accepts legacy CLAWD_ZK env aliases", () => {
+    const cfg = loadAgentConfig({
+      CLAWD_ZK_RPC_URL: "https://legacy.example",
+      CLAWD_ZK_PROGRAM_ID: "CLAWDZK_LOCALNET",
+      CLAWD_ZK_NETWORK: "localnet",
+    });
+    expect(cfg.rpcUrl).toBe("https://legacy.example");
+    expect(cfg.network).toBe("localnet");
     expect(cfg.programId.toBase58()).not.toBe(DEFAULT_PROGRAM_ID.toBase58());
   });
 
   test("rejects a malformed program id with a clear error", () => {
     expect(() =>
       loadAgentConfig({
-        CLAWD_ZK_RPC_URL: "https://example.invalid",
-        CLAWD_ZK_PROGRAM_ID: "not-a-pubkey",
+        ZK_SHARK_RPC_URL: "https://example.invalid",
+        ZK_SHARK_PROGRAM_ID: "not-a-pubkey",
       }),
-    ).toThrow(/Invalid CLAWD_ZK_PROGRAM_ID/);
+    ).toThrow(/Invalid ZK_SHARK_PROGRAM_ID/);
   });
 
   test("normalises commitment and network", () => {
     const cfg = loadAgentConfig({
-      CLAWD_ZK_RPC_URL: "https://example.invalid",
-      CLAWD_ZK_COMMITMENT: "finalized",
-      CLAWD_ZK_NETWORK: "devnet",
+      ZK_SHARK_RPC_URL: "https://example.invalid",
+      ZK_SHARK_COMMITMENT: "finalized",
+      ZK_SHARK_NETWORK: "devnet",
     });
     expect(cfg.commitment).toBe("finalized");
     expect(cfg.network).toBe("devnet");
   });
 });
 
-describe("ClawdZkAgent.verifyProof (off-chain)", () => {
+describe("ZkSharkAgent.verifyProof (off-chain)", () => {
   const agent = makeStubAgent();
 
   test("rejects when no public inputs are derivable", () => {
@@ -231,32 +224,9 @@ describe("ClawdZkAgent.verifyProof (off-chain)", () => {
       ),
     );
   });
-
-  test("derives public inputs from commit args when only those are given", () => {
-    const r = agent.verifyProof({
-      proof: fakeProof(),
-      committer: new Uint8Array(32),
-      modelHash: new Uint8Array(32),
-      ciphertextCommitment: new Uint8Array(32),
-      stateVersion: 7,
-    });
-    expect(r.ok).toBe(true);
-    expect(r.publicInputsPackedHex).toBe(
-      hexOf(
-        packPublicInputs(
-          buildCommitPublicInputs({
-            committer: new Uint8Array(32),
-            modelHash: new Uint8Array(32),
-            ciphertextCommitment: new Uint8Array(32),
-            stateVersion: 7,
-          }),
-        ),
-      ),
-    );
-  });
 });
 
-describe("ClawdZkAgent.computeNullifierFor", () => {
+describe("ZkSharkAgent.computeNullifierFor", () => {
   const agent = makeStubAgent();
 
   test("rejects secrets shorter than 16 bytes", async () => {
@@ -343,11 +313,11 @@ describe("Intent router", () => {
   });
 });
 
-describe("ClawdZkAgent.describe (inspect)", () => {
+describe("ZkSharkAgent.describe (inspect)", () => {
   test("prints program, network, rpc, photon, commitment, apiKey, signer", () => {
     const agent = makeStubAgent();
     const desc = agent.describe();
-    expect(desc).toMatch(/🦞🔐 Clawd ZK Agent configuration/);
+    expect(desc).toMatch(/ZK Shark - Shark of All Streets configuration/);
     expect(desc).toMatch(/program\s+:/);
     expect(desc).toMatch(/network\s+:\s+mainnet/);
     expect(desc).toMatch(/rpc\s+:\s+https:\/\/example\.invalid/);
@@ -356,11 +326,17 @@ describe("ClawdZkAgent.describe (inspect)", () => {
   });
 });
 
-describe("ClawdZkAgent.loadProof", () => {
+describe("ZkSharkAgent.loadProof", () => {
   test("parses a hex JSON proof file (off-chain sanity)", async () => {
-    const proof = await ClawdZkAgent.loadProof("/dev/null").catch(() => null);
+    const proof = await ZkSharkAgent.loadProof("/dev/null").catch(() => null);
     // /dev/null is not valid JSON — we just want to assert the failure shape.
     expect(proof === null || proof instanceof Object).toBe(true);
+  });
+});
+
+describe("legacy class alias", () => {
+  test("keeps ClawdZkAgent as a compatibility export", () => {
+    expect(ClawdZkAgent).toBe(ZkSharkAgent);
   });
 });
 

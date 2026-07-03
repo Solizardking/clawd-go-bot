@@ -47,14 +47,6 @@
     "depin"
   ],
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Solizardking/clawdbot-go"
-  },
-  "homepage": "https://github.com/Solizardking/clawdbot-go/tree/main/zk-primitives/client",
-  "bugs": {
-    "url": "https://github.com/Solizardking/clawdbot-go/issues"
-  },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.0",
     "@lightprotocol/stateless.js": "^0.23.3",

@@ -15,7 +15,7 @@
  * import { ClawdZkClient, computeNullifier, buildPublicInputs } from "@clawd/zk-client";
  * import { createSolanaRpc, createKeyPairSignerFromBytes } from "@solana/kit";
  *
- * const rpc = createSolanaRpc("https://zk.x402.wtf/api/solana/rpc-public");
+ * const rpc = createSolanaRpc("https://mainnet.helius-rpc.com?api-key=...");
  * const signer = await createKeyPairSignerFromBytes(secretKey);
  * const client = new ClawdZkClient({
  *   rpc,

@@ -1,12 +1,14 @@
 {
-  "name": "@clawd/zk-agent",
+  "name": "@clawd/zk-shark-agent",
   "version": "0.1.0",
-  "description": "Clawd ZK Agent — an agent-shaped wrapper around @clawd/zk-client that turns the nullifier / Groth16 / Light Protocol primitives into intent-routable operations a Clawd agent can call directly.",
+  "description": "ZK Shark, the Shark of All Streets agent: an intent-routable wrapper around @clawd/zk-client for nullifiers, Groth16 proofs, and Light Protocol primitives.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
+    "zk-shark-agent": "./dist/cli.js",
+    "shark-of-all-streets": "./dist/cli.js",
     "clawd-zk-agent": "./dist/cli.js"
   },
   "exports": {
@@ -47,23 +49,18 @@
     "zk",
     "light-protocol",
     "clawd",
+    "zk-shark",
+    "shark-of-all-streets",
+    "ordinals",
     "agent",
     "nullifier",
     "groth16",
     "attestation",
-    "clawd-zk-agent"
+    "zk-shark-agent"
   ],
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Solizardking/clawdbot-go"
-  },
-  "homepage": "https://github.com/Solizardking/clawdbot-go/tree/main/zk-primitives/agent",
-  "bugs": {
-    "url": "https://github.com/Solizardking/clawdbot-go/issues"
-  },
   "dependencies": {
-    "@clawd/zk-client": "file:../client",
+    "@clawd/zk-client": "workspace:*",
     "@solana/kit": "^2.1.0",
     "@solana/web3.js": "^1.95.0"
   },

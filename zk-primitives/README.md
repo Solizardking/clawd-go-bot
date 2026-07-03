@@ -5,19 +5,6 @@
 > Powers the on-chain identity, attestation, and encrypted-state
 > layer for the Clawd agent fleet.
 
-Public surfaces for the wider stack:
-- Runtime repo: `https://github.com/Solizardking/clawdbot-go`
-- Ecosystem hub: `https://github.com/solizardking/solana-clawd`
-- Gateway: `https://zk.x402.wtf`
-- Terminal: `https://cheshireterminal.ai`
-
-Runtime catalog surfaces:
-- `clawdbot catalog zk` — inspect this ZK subsystem from the Go runtime
-- `clawdbot catalog skills zk` — confirm `agent/SKILL.md` is discoverable
-- `clawdbot catalog agents zk` — find local ZK-capable agent definitions
-- [`MANIFEST.json`](./MANIFEST.json) — machine-readable package, operation,
-  trust-gate, and local catalog metadata
-
 ## What this is
 
 A focused, audited-friendly on-chain program plus a TypeScript SDK
@@ -49,20 +36,8 @@ The reasoning, cost analysis, and security model are all there.
 ```
 zk-primitives/
 ├── README.md                                ← you are here
-├── MANIFEST.json                            ← machine-readable subsystem index
-├── zk.md                                    ← full reference
 ├── docs/
-│   ├── ARCHITECTURE.md                      ← deep dive: design, costs, security
-│   └── INTEGRATION.md                       ← runtime/catalog integration notes
-├── agent/                                   ← TypeScript agent wrapper (@clawd/zk-agent)
-│   ├── agent.json                           ← local Clawd agent catalog entry
-│   ├── README.md
-│   ├── SKILL.md                             ← loadable Clawd skill contract
-│   └── src/
-│       ├── agent.ts                         ← high-level ClawdZkAgent
-│       ├── cli.ts                           ← clawd-zk-agent binary
-│       ├── config.ts                        ← env-driven config loader
-│       └── intents.ts                       ← deterministic router
+│   └── ARCHITECTURE.md                      ← deep dive: design, costs, security
 ├── programs/
 │   └── clawd-zk/                           ← Anchor program
 │       ├── Cargo.toml
@@ -73,7 +48,6 @@ zk-primitives/
 │           ├── proof.rs                     ← Groth16 verifier wrapper
 │           └── state.rs                     ← compressed state writes / consumes
 ├── client/                                  ← TypeScript SDK (@clawd/zk-client)
-│   ├── README.md
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── src/
@@ -83,38 +57,12 @@ zk-primitives/
 │       ├── proof.ts                         ← public-input packing + proof serialization
 │       ├── state.ts                         ← Light Protocol helpers
 │       └── client.ts                        ← high-level ClawdZkClient
-├── tests/                                   ← integration tests and test notes
-│   ├── README.md
+├── tests/                                   ← integration tests
 │   ├── nullifier.test.ts                    ← vitest, off-chain pieces
 │   └── nullifier.rs                         ← cargo test-sbf, on-chain pieces
 └── configs/
-    ├── README.md
-    ├── clawdbot-zk.example.json             ← runtime-facing config example
     └── light-trees.yaml                     ← canonical V2 tree pubkeys
 ```
-
-## Runtime integration
-
-From the repo root:
-
-```bash
-clawdbot catalog
-clawdbot catalog zk
-clawdbot catalog skills zk
-clawdbot catalog agents zk
-```
-
-The catalog command ties this directory to the local ecosystem roots:
-
-| Surface | Default root | Override |
-|---|---|---|
-| Skills | `/Users/8bit/skills/skills` | `CLAWDBOT_SKILLS_DIR` |
-| Agents | `/Users/8bit/agents/agents/src` | `CLAWDBOT_AGENTS_DIR` |
-| ZK primitives | `./zk-primitives` | `CLAWDBOT_ZK_PRIMITIVES_DIR` |
-
-This path is intentionally read-only. It proves the runtime can see the
-skills, agents, package metadata, docs, and ZK operations before any signer or
-live RPC action is involved.
 
 ## The three instructions
 
@@ -159,7 +107,7 @@ pnpm install   # or npm install
 import { ClawdZkClient, computeNullifier } from "@clawd/zk-client";
 import { createSolanaRpc, createKeyPairSignerFromBytes } from "@solana/kit";
 
-const rpc = createSolanaRpc("https://zk.x402.wtf/api/solana/rpc-public");
+const rpc = createSolanaRpc("https://mainnet.helius-rpc.com?api-key=...");
 const signer = await createKeyPairSignerFromBytes(secretKey);
 const client = new ClawdZkClient({ rpc, programId: PROGRAM_ID });
 
