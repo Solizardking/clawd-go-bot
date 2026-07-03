@@ -104,6 +104,12 @@ install.sh                      Curl installer (just added)
 | `ZKROUTER_API_KEY` | `clawdbot-free` | Key for zkrouter free tier |
 | `HELIUS_RPC_URL` | `https://zk.x402.wtf/api/solana/rpc-public` | Solana RPC (SolanaTracker-backed) |
 | `CLAWDBOT_INSTALL_ID` | set by installer | Install identity for tracking |
+| `CLAWDBOT_AGENT_DNA_ID` | set by installer | Starter agent DNA proof ID sent to install tracking |
+| `AGENT_WALLET_PUBLIC_KEY` | set by installer | Local agent wallet funded at startup |
+| `AGENT_WALLET_KEYPAIR` | `~/.clawdbot/workspace/agent-wallet.json` | Local 0600 Solana keypair path |
+| `CLAWDBOT_INSTALL_FUNDING_STATUS` | set by installer/API | Startup funding state (`requested`, `queued`, `funded`, etc.) |
+| `CLAWDBOT_SOL_FUNDING_SIGNATURE` | set by install API | SOL funding transaction signature when available |
+| `CLAWDBOT_CLAWD_FUNDING_SIGNATURE` | set by install API | `$CLAWD` funding transaction signature when available |
 | `OPENROUTER_API_KEY` | — | Override to use OpenRouter instead |
 | `HELIUS_API_KEY` | — | Override to use Helius directly |
 
@@ -135,11 +141,20 @@ The install API at `POST /api/install` returns:
   "installId": "cb_...",
   "zkrouterKey": "clawdbot-<32-char-hex>",
   "zkrouterBase": "https://clawdrouter-zk.fly.dev/v1",
-  "rpcUrl": "https://zk.x402.wtf/api/solana/rpc-public"
+  "rpcUrl": "https://zk.x402.wtf/api/solana/rpc-public",
+  "fundingStatus": "funded",
+  "solSignature": "<signature>",
+  "clawdSignature": "<signature>"
 }
 ```
 
-The installer already calls this and writes the returned key to `~/.clawdbot/.env`.
+The installer sends `agentWalletPubkey`, `agentDnaId`, and a funding request for
+`69,420,000` lamports plus `1,000` `$CLAWD`
+(`8cHzQHUS2s2h8TzCmfqPKYiM4dSt4roa3n7MyRLApump`). The gateway should hold the
+funding wallet private key only in its server environment, transfer idempotently
+per install/wallet, create the recipient `$CLAWD` ATA if needed, and return
+signatures or a queued status. The installer writes the non-secret receipt to
+`~/.clawdbot/install.json` and mirrors the returned fields in `~/.clawdbot/.env`.
 
 ---
 
