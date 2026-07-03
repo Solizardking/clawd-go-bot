@@ -1,6 +1,204 @@
 {
   "version": 1,
   "skills": {
+    "1password": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "1password/SKILL.md",
+      "computedHash": "10f42a30af4624e41b63a91f50c5eedb25d7954be084896375e38abaf5358a3c"
+    },
+    "apple-notes": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "apple-notes/SKILL.md",
+      "computedHash": "0996d4d6157cc4b127621ec4ce7a35c0b75fe4cbcfc28ec4699ee5299c95051e"
+    },
+    "apple-reminders": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "apple-reminders/SKILL.md",
+      "computedHash": "017ad3751babf289cc71de172d49316bdebb2d53217a8065825cb31d6dbc8d75"
+    },
+    "bear-notes": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "bear-notes/SKILL.md",
+      "computedHash": "9f2e88b5da39f5916977523d3611fd4ae9b9e5712c1ea757a3d4f21f045a643e"
+    },
+    "bird": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "bird/SKILL.md",
+      "computedHash": "88d372d933d10326e7b22318125b369f3f78e65dbaa892d35ff9573032a9257f"
+    },
+    "blogwatcher": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "blogwatcher/SKILL.md",
+      "computedHash": "f1d9b81c0673362d6fb59f986d028968d9de61eb9ea8dade8367ecbfca75fa4e"
+    },
+    "blucli": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "blucli/SKILL.md",
+      "computedHash": "e848db9b4edc4a707ec4390e0e775dad1174176178d557680326fc36118b5097"
+    },
+    "bluebubbles": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "bluebubbles/SKILL.md",
+      "computedHash": "60baa6d3f1a5684b1132377116b8e7a629581c18fa6acf4fcaabf59746d1dc03"
+    },
+    "camsnap": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "camsnap/SKILL.md",
+      "computedHash": "3cdf3b179a8176aab3aaa2376f9bf6007d682f0237c4fb4e4eb4450767e1ce55"
+    },
+    "cheshire-terminal": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "cheshire-terminal/SKILL.md",
+      "computedHash": "d3da9358a2d31af4bd9c449889a4b8d9099c4ff469819b6f8732e9ae2fce17a8"
+    },
+    "claude-code-skill": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "openclaw-claude-code-skill-main/SKILL.md",
+      "computedHash": "7a86ebc7f49f4e4bafe291a728040523cce6e0a8965a34de66693e59e13404be"
+    },
+    "clawd-agent-launchpad": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "clawd-agent-launchpad/SKILL.md",
+      "computedHash": "de67266055c5ee5847fcde3f15c065a6c54372f63cf496a446b384d3cb2ac1d0"
+    },
+    "clawd-skills-installer": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "clawd-skills-installer/SKILL.md",
+      "computedHash": "d91f8aea27fa5e3839f9cb16b4b305cde67e0cedb0c3200647c5461c39ed8045"
+    },
+    "clawd-token-ops": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "clawd-token-ops/SKILL.md",
+      "computedHash": "396bbad7f1e2171961f5c4305b31eafd27939735c48690b176ee7868f2ceeccf"
+    },
+    "clawd-trading-terminal": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "clawd-trading-terminal/SKILL.md",
+      "computedHash": "0589c18c6ad6c8d36a156523ebef31c8fb227a611f9f97afa57748b54c6197e1"
+    },
+    "clawdex": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "clawdex/SKILL.md",
+      "computedHash": "958849ed5b9c8ebdf82bb666c09a5fdb70dcc9140101d59e7d514b04cbf60e1a"
+    },
+    "clawdhub": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "clawdhub/SKILL.md",
+      "computedHash": "e2bae388fb7ffe0d76d3f95d7621a2c947a145baaa3af3194caaa18d4a69cd19"
+    },
+    "coding-agent": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "coding-agent/SKILL.md",
+      "computedHash": "a92a22e5f84eb853f95541597aac4aeea137b08719fce76225bdaff181b7d7ea"
+    },
+    "dex-screener-scanner": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dex-screener-scanner/SKILL.md",
+      "computedHash": "b49f67ea03a0a166e0cf72ceaed289525fcbfa380ad5a0e08a70875976f4bd9c"
+    },
+    "dflow-docs": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-docs/SKILL.md",
+      "computedHash": "3c15ef049b38a944600ea4ecef26756c2e3b4386481174524a13f3c5fb30124b"
+    },
+    "dflow-kalshi-market-data": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-kalshi-market-data/SKILL.md",
+      "computedHash": "b483873c994d25a1329ac30ad736229c177e3987dee162a439bac51022f5642d"
+    },
+    "dflow-kalshi-market-scanner": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-kalshi-market-scanner/SKILL.md",
+      "computedHash": "6fbaf92472da5df4ddd7a3e6bd7ca497ff2c33c9228d434c511f47a0162c9675"
+    },
+    "dflow-kalshi-portfolio": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-kalshi-portfolio/SKILL.md",
+      "computedHash": "f014cb5753389712d76596da55b4d4ada2da042f943a2199f5e12b8ddd2335dd"
+    },
+    "dflow-kalshi-trading": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-kalshi-trading/SKILL.md",
+      "computedHash": "f5caecbd9bd51b57affce9cceaf13f4811673be5e3eac1b36f066d86e4bce0c9"
+    },
+    "dflow-phantom-connect": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-phantom-connect/SKILL.md",
+      "computedHash": "97d4c1f66d953e48334e75814460f95289d98887576cd0e90cd5c01afe729066"
+    },
+    "dflow-platform-fees": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-platform-fees/SKILL.md",
+      "computedHash": "cc3e0eaba50bcdc6017fde568c0a93951caa4668923193937a599072afd12fc8"
+    },
+    "dflow-proof-kyc": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-proof-kyc/SKILL.md",
+      "computedHash": "fee29ea7f62d89e08b15cf3df0596aeac61d232f89fcf677203b9ba1961de801"
+    },
+    "dflow-spot-trading": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "dflow-spot-trading/SKILL.md",
+      "computedHash": "1d6dd128df0ea86c603aac7bda0864f4de519586b04cf8fb296c410492a23e00"
+    },
+    "eightctl": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "eightctl/SKILL.md",
+      "computedHash": "d98e315e862a7b238c774b24325fd3e06bf8c2053d585b8f2c486228c8297f15"
+    },
+    "gemini": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "gemini/SKILL.md",
+      "computedHash": "41bdfd1e51cb301880938d6ea7693717c08ffdbca49ad6c33782487bd2aa0ac6"
+    },
+    "gifgrep": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "gifgrep/SKILL.md",
+      "computedHash": "74f16561f93e0e2c22c022a5cde28b10de4e6060172cf4362d7593d80ad2055c"
+    },
+    "github": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "github/SKILL.md",
+      "computedHash": "a7580b43bdc65d4f6469ef7e631dbbea649714dc3bbedc060f23525d331a7e53"
+    },
+    "gog": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "gog/SKILL.md",
+      "computedHash": "5d89f36cc8b66bc006415c4798f8173f901f8cf2da91bb54d634076571d81e8c"
+    },
     "golang-benchmark": {
       "source": "samber/cc-skills-golang",
       "sourceType": "github",
@@ -264,6 +462,372 @@
       "sourceType": "github",
       "skillPath": "skills/golang-uber-fx/SKILL.md",
       "computedHash": "ce20545b444a3eef463cd2cd32a57479ab0b4a483eeb7b212b2ae180289d004c"
+    },
+    "goplaces": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "goplaces/SKILL.md",
+      "computedHash": "15562a44b2378e98de9683ca6a4dc45495222843ca854ca9849b0c59ba8ca0ab"
+    },
+    "himalaya": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "himalaya/SKILL.md",
+      "computedHash": "8f36374b1eed82933a104ffdfa751727263e90dcc0a63f1b587d6fe464ba809e"
+    },
+    "imperial": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imperial/SKILL.md",
+      "computedHash": "c22b6b40c068ccb689887969ea89eecd092ab45613b5371a1031c551a336fd12"
+    },
+    "imperial-margin-operations": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imperial-margin-operations/SKILL.md",
+      "computedHash": "508fe68f1522d5ef92649e7cdc88b01a13927e570d01f61f20c4d328d7627ca9"
+    },
+    "imperial-portfolio-intel": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imperial-portfolio-intel/SKILL.md",
+      "computedHash": "3c5c6a2526b8f3741dd82de311183b19e44aa6efc17ad1ea07f728a5ec838596"
+    },
+    "imperial-position-management": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imperial-position-management/SKILL.md",
+      "computedHash": "4eba5e6702dc3caeada106ac711abdd0a35cd7f7c9443ab3ffc815e7f5acf2ea"
+    },
+    "imperial-skills-index": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imperial-skills-index/SKILL.md",
+      "computedHash": "4e873e54f759f50903ea5094a1a0767984bb8aaff1d4276e1e572ea9c07b02f7"
+    },
+    "imperial-tpsl-management": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imperial-tpsl-management/SKILL.md",
+      "computedHash": "1cc5e6f0be5e6a37fc687e83a4fec4021d035ca7a2359d929262b6bf540a3b00"
+    },
+    "imsg": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "imsg/SKILL.md",
+      "computedHash": "fb33bc2bfb1fe4770568520b6a65bc91e01015aa4e4731896d9937fbb1d9c4fd"
+    },
+    "local-places": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "local-places/SKILL.md",
+      "computedHash": "a2c778496a5ebad214c2ac23e49a6dc370925b1141d25a02342197249f8dd2ea"
+    },
+    "magicblock": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "magicblock/SKILL.md",
+      "computedHash": "9daf522b00e45d1548447cab81ae2ee4f1599fdfb8ec217b0c4078db913e09d0"
+    },
+    "mcporter": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "mcporter/SKILL.md",
+      "computedHash": "c6cb6838f2c2836c3ce9acec5a54ee3c6cf3adbf68db62dae41fecbbe068aa16"
+    },
+    "model-usage": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "model-usage/SKILL.md",
+      "computedHash": "a2cf61d31e6aeca8165c14c4bcab711d91236512e7a8af3960aeef631099b5dd"
+    },
+    "nano-banana-pro": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "nano-banana-pro/SKILL.md",
+      "computedHash": "fc919d73154130b623eb1f688f3a8ba84f5f9ae28233c72f1ff24d0301510988"
+    },
+    "nano-pdf": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "nano-pdf/SKILL.md",
+      "computedHash": "105edacb48d3b706309389a7ecc8ae64c0c965ce95e09bfab56c5e0630f972af"
+    },
+    "notion": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "notion/SKILL.md",
+      "computedHash": "2c61e9cab3618df39b364777cf9ab0d3dca37fde961792093d2879f9e477e3d7"
+    },
+    "obsidian": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "obsidian/SKILL.md",
+      "computedHash": "9bff6d9d6d93fb1885aeaf2dd7ef2a8dc15730c09561fdde69265b81cb7b695e"
+    },
+    "openai-image-gen": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "openai-image-gen/SKILL.md",
+      "computedHash": "1aef34280a11a3e6cde0037a1493ec171bacf37798f4d40d4576dc03447f8639"
+    },
+    "openai-whisper": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "openai-whisper/SKILL.md",
+      "computedHash": "ca33b7f48adb2282a3b0bf21ae83bc6fc6ad0dd51d65f766b30883040912a727"
+    },
+    "openai-whisper-api": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "openai-whisper-api/SKILL.md",
+      "computedHash": "bce411a8167d597833746c186b8fa5cc1ddcf3c9db38c93d5e4a7b580269ee33"
+    },
+    "openhue": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "openhue/SKILL.md",
+      "computedHash": "98f1f6db61afaf0609faa1ace3a6cad1991130ab3d9815ff08175f62bcb6bfc9"
+    },
+    "oracle": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "oracle/SKILL.md",
+      "computedHash": "608eae527771f3a55fa827663f42f579919fdc09838123b3a68bdb693f11dc03"
+    },
+    "ordercli": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "ordercli/SKILL.md",
+      "computedHash": "0ce55fdf8b6bba9fa4bc1056ddebf4c130a03ad8e2327ea83878130dea86455d"
+    },
+    "peekaboo": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "peekaboo/SKILL.md",
+      "computedHash": "49c2b12b5169394e3c0a1c635ce3f572ba8f6b66855ac77124c33d6de93b332e"
+    },
+    "phantom-wallet-mcp": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "phantom-wallet-mcp/SKILL.md",
+      "computedHash": "ab58a9ca8b91a75a4aa701c3972f2251292d42af18c5f3955b5d6bb5fd87f8a5"
+    },
+    "pumpfun": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "pumpfun/SKILL.md",
+      "computedHash": "164d8b277767bcd9549d6098ce23463f737e80f6c0837f450a98f6cd30c221c8"
+    },
+    "qedgen": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "solana-formal-verification/SKILL.md",
+      "computedHash": "05774c7f736f5fe9e9d18744d194c93276afb8a7b2eb6e963f4cf8abfa8a7ec9"
+    },
+    "sag": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "sag/SKILL.md",
+      "computedHash": "863480ac58d66d4ca9fe8298fdb9928ee6d01e8342bb6d503b394093882b0d26"
+    },
+    "session-logs": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "session-logs/SKILL.md",
+      "computedHash": "5caac4a7d194ac0c8c2502cc5b70d7973cba011a6f8e388af9f97b6dc279648b"
+    },
+    "sherpa-onnx-tts": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "sherpa-onnx-tts/SKILL.md",
+      "computedHash": "c196b7cb017db60a9a9872df1635106505c7caf09b1cfe1ec46405d64b882ec2"
+    },
+    "skill-creator": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "skill-creator/SKILL.md",
+      "computedHash": "9dd7db3f56e36005be8044adcf8f2578f6ac3991fb440a6d23cb8eb2d3a0e523"
+    },
+    "slack": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "slack/SKILL.md",
+      "computedHash": "d83501824dbf37cdb17efd13f911bf3e42f1b172bcce5f217a77ee05aa09ef36"
+    },
+    "solana-clawd": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "solana-clawd/SKILL.md",
+      "computedHash": "1c90304224912aebaccdf831664f729eefdfa6895ff9be29f90a5f38d25376b3"
+    },
+    "solana-clawd-agentic-commerce": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "solana-clawd-agentic-commerce/SKILL.md",
+      "computedHash": "4cb4b9aac0592ed423f9c7f7f95efc61db3736531ba56f695219d2c271d3f7e6"
+    },
+    "solana-dev": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "solana-dev/SKILL.md",
+      "computedHash": "8f69bbe4aecdfecd06d357790b371dba07b8fdcbd6e4aa55f0038f3d20954d69"
+    },
+    "solana-redpill-verifier": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "solana-tee/SKILL.md",
+      "computedHash": "380b27e8d6a280dc75042882428ff1f80b7cf11565a5d6f452d3181010a9717e"
+    },
+    "songsee": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "songsee/SKILL.md",
+      "computedHash": "29235684ae2126bf02d70fd8fe66e559eff5e1d8fd05bb5dc3192b4931adbbbc"
+    },
+    "sonoscli": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "sonoscli/SKILL.md",
+      "computedHash": "903b556b81a3cd49c3cbc476c9f61daf5a3643fc8f5569e795397053d88a7d9c"
+    },
+    "spotify-player": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "spotify-player/SKILL.md",
+      "computedHash": "570d3465cc31b98e9f282c4579261e797ae9891815e84dfb8bc4d1ba1eb9371e"
+    },
+    "summarize": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "summarize/SKILL.md",
+      "computedHash": "c47769178d729554aaec6e2dc7d0ceb423d48abacac67855a436a6f0b93f9233"
+    },
+    "things-mac": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "things-mac/SKILL.md",
+      "computedHash": "923dcdb16cfb6bab612460d6e9daab2d6098ab3ff0897af15e4deb2dbbbfc429"
+    },
+    "tmux": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "tmux/SKILL.md",
+      "computedHash": "d369a271693e587026b0da8198312937270c17c27435fd5d7989b49abfe15b0d"
+    },
+    "trello": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "trello/SKILL.md",
+      "computedHash": "f0172b7059a75b0a2e0fed732be4563df525253c56684322e97e49352c770b78"
+    },
+    "video-frames": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "video-frames/SKILL.md",
+      "computedHash": "188bc76899cb2a3e8a1146cc6e4c223b1294bcbfecdc5088564d35d3e676eca7"
+    },
+    "voice-call": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "voice-call/SKILL.md",
+      "computedHash": "b730d771728311982facf3e62bdfc256b92e1c1fef83a11646e425f95ec7d584"
+    },
+    "vulcan": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan/SKILL.md",
+      "computedHash": "8bab682e45606dfafc7efe199f874d7a5a16de5766412d8bf8e4ccf93ccb7c4d"
+    },
+    "vulcan-error-recovery": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-error-recovery/SKILL.md",
+      "computedHash": "c18fab5931e9210da70c619041268b52ef67fad313debd4c8baf983a854483cf"
+    },
+    "vulcan-grid-trading": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-grid-trading/SKILL.md",
+      "computedHash": "1b0ddcbacf3c2c1d5909122851e0a06d89112fc8602c6cfc34e9f90c713fe4c8"
+    },
+    "vulcan-lot-size-calculator": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-lot-size-calculator/SKILL.md",
+      "computedHash": "917afeab574df982ae170bcabe3925d5b0ce3f7a16acefa8c130d08a25604ad2"
+    },
+    "vulcan-margin-operations": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-margin-operations/SKILL.md",
+      "computedHash": "a7672f57b4da66d9ab3b1055adf87b7a4f23e093f0804f961f64c1daa670715b"
+    },
+    "vulcan-market-intel": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-market-intel/SKILL.md",
+      "computedHash": "cd6f8a22d26e7d13c2d23ca22872be605b8a5a122e2ea2f022b11acf0577dc26"
+    },
+    "vulcan-onboarding": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-onboarding/SKILL.md",
+      "computedHash": "341efa892c2f02db22f395f2a36774dc95f34a8512424db8a07e5a76459fad2a"
+    },
+    "vulcan-position-management": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-position-management/SKILL.md",
+      "computedHash": "7e51ea65492095a545bb34513553c7157d21c4b00d293773630c1253097337cd"
+    },
+    "vulcan-quickstart": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-quickstart/SKILL.md",
+      "computedHash": "5bff5e3f154354b916e7d5ebb6709a8ac5d80c6e981497daf4295a1af5a8841c"
+    },
+    "vulcan-skills-index": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-skills-index/SKILL.md",
+      "computedHash": "0bec3544b4146de8b3517fa035de54ece53cd7abbf138cd6cb395e59312af9e8"
+    },
+    "vulcan-ta-strategy": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-ta-strategy/SKILL.md",
+      "computedHash": "e0e96552296c6e12b60f42a565386e3c7a34df234fa0249a556402e072f891e6"
+    },
+    "vulcan-tpsl-management": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-tpsl-management/SKILL.md",
+      "computedHash": "373126d121ac48a3d9847b3da8740218f86fc0ad9b68cdcf908f8aab624d9b9d"
+    },
+    "vulcan-twap-execution": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "vulcan-twap-execution/SKILL.md",
+      "computedHash": "874748869b0e764c0141caf070a0a4952e3e83ff5c16c640a8141ce1301fbdab"
+    },
+    "wacli": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "wacli/SKILL.md",
+      "computedHash": "d7679f50ba4241d9a6ed15a6d34066bd06fc1ba5d706de629d5ad7f7884b2a51"
+    },
+    "weather": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "weather/SKILL.md",
+      "computedHash": "3607a21e58d9e4c80c37089ac46f6a18207d39830c2aaa347c92e3c7d4ef575a"
+    },
+    "zkrouter": {
+      "source": "Solizardking/skills",
+      "sourceType": "github",
+      "skillPath": "zkrouter/SKILL.md",
+      "computedHash": "4b7e98e1ad8b71fafd3cd1c1a3e0ff5c884d48539f665c8dfc5b5ad3bd8cc763"
     }
   }
 }
