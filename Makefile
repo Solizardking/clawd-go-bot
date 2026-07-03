@@ -34,13 +34,14 @@ LDFLAGS   := -s -w \
 GO        := go
 GOBUILD   := $(GO) build -trimpath -ldflags "$(LDFLAGS)"
 GOTEST    := $(GO) test -v -race
+GOFILES   := $(shell find cmd pkg web/backend -type f -name '*.go')
 
 # Output directories
 BUILD_DIR := ./build
 BIN_CLI   := $(BUILD_DIR)/clawdbot
 BIN_TUI   := $(BUILD_DIR)/clawdbot-tui
 
-.PHONY: all build orin rpi riscv macos cross tui web docker docker-orin clean install test lint deps scan-i2c help
+.PHONY: all build orin rpi riscv macos cross tui web docker docker-orin clean install test lint verify audit release-check deps scan-i2c help
 
 # ── Default ───────────────────────────────────────────────────────────
 
@@ -150,6 +151,39 @@ lint:
 	@echo "🔍 Running linter..."
 	golangci-lint run ./...
 
+verify:
+	@echo "🔎 Verifying Go formatting..."
+	@files="$$(gofmt -l $(GOFILES))"; \
+	if [ -n "$$files" ]; then \
+		echo "gofmt needed:"; \
+		echo "$$files"; \
+		exit 1; \
+	fi
+	@echo "🔎 Running go vet..."
+	$(GO) vet ./...
+	@echo "🧪 Running race tests..."
+	$(GOTEST) ./...
+	@echo "🦞 Building release entrypoints..."
+	$(GOBUILD) -o /tmp/clawdbot-verify ./cmd/clawdbot
+	$(GOBUILD) -o /tmp/clawdbot-tui-verify ./cmd/clawdbot-tui
+
+audit: verify
+	@echo "🔒 Running vulnerability scan when govulncheck is installed..."
+	@if command -v govulncheck >/dev/null 2>&1; then \
+		govulncheck ./...; \
+	else \
+		echo "govulncheck not installed; install with: go install golang.org/x/vuln/cmd/govulncheck@latest"; \
+	fi
+
+release-check: verify
+	@echo "📦 Checking tracked generated artifacts..."
+	@bad="$$(git ls-files -- .cache build dist clawdbot ':(glob)**/.next/**' ':(glob)**/target/**' ':(glob)**/*.tsbuildinfo')"; \
+	if [ -n "$$bad" ]; then \
+		echo "generated artifacts are tracked and must be removed from git:"; \
+		echo "$$bad"; \
+		exit 1; \
+	fi
+
 # ── Dependencies ──────────────────────────────────────────────────────
 
 deps:
@@ -199,6 +233,9 @@ help:
 	@echo "  install     Install to /usr/local/bin"
 	@echo "  test        Run tests"
 	@echo "  lint        Run linter"
+	@echo "  verify      Format check + vet + race tests + builds"
+	@echo "  audit       verify + govulncheck when installed"
+	@echo "  release-check verify + tracked artifact guard"
 	@echo "  deps        Download dependencies"
 	@echo "  scan-i2c    Scan for Modulino sensors"
 	@echo "  clean       Remove build artifacts"

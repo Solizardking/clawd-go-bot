@@ -20,7 +20,7 @@
 
 **70 Go source files · 42 packages · 21,400+ lines · 3 binaries · <10MB RAM · Grok-first**
 
-[Quick Start](#-quick-start) · [Architecture](#-architecture) · [The Six Laws](#-the-six-law-harness) · [CLI Reference](#-cli-reference) · [Deployment](#-deployment)
+[Quick Start](#-quick-start) · [Architecture](#-architecture) · [The Six Laws](#-the-six-law-harness) · [CLI Reference](#-cli-reference) · [Security](SECURITY.md) · [Release](OPEN_SOURCE_RELEASE.md)
 
 </div>
 
@@ -593,9 +593,15 @@ go build -o build/clawdbot-web ./web/backend
 | `/api/laws` | GET | Canonical six-law harness |
 | `/api/trading/cockpit` | GET | Trading readiness, risk limits, connector status, law state |
 | `/api/doctor` | GET | Runtime, config, trading, and ZK diagnostics |
-| `/api/config` | GET | Read-only configuration |
+| `/api/config` | GET | Read-only redacted configuration |
 | `/api/packages` | GET | All Go packages with file counts |
 | `/api/env` | GET | Safe (non-secret) environment variables |
+
+Safe defaults:
+- The server binds to `127.0.0.1` unless `--public` is passed.
+- CORS allows same-origin requests only unless `CLAWDBOT_CORS_ORIGINS` is set.
+- Proxy IP headers are ignored unless `CLAWDBOT_TRUST_PROXY_HEADERS=1` is set.
+- `/api/config` masks secrets unless `CLAWDBOT_WEB_EXPOSE_SECRETS=1` is set for trusted local debugging.
 
 ---
 
