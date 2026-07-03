@@ -1,13 +1,8 @@
 <div align="center">
 
-```
-    ██████╗██╗      █████╗ ██╗    ██╗██████╗ ██████╗  ██████╗ ████████╗
-   ██╔════╝██║     ██╔══██╗██║    ██║██╔══██╗██╔══██╗██╔═══██╗╚══██╔══╝
-   ██║     ██║     ███████║██║ █╗ ██║██║  ██║██████╔╝██║   ██║   ██║
-   ██║     ██║     ██╔══██║██║███╗██║██║  ██║██╔══██╗██║   ██║   ██║
-   ╚██████╗███████╗██║  ██║╚███╔███╔╝██████╔╝██████╔╝╚██████╔╝   ██║
-    ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═════╝ ╚═════╝  ╚═════╝    ╚═╝
-```
+<picture>
+  <img src="docs/assets/clawdbot-hero.svg" alt="ClawdBot Go animated Solana runtime hero" width="100%">
+</picture>
 
 ### 🦞 Sovereign Solana Trading Intelligence
 
@@ -18,7 +13,9 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![License](https://img.shields.io/badge/License-MIT-9945FF?style=for-the-badge)](LICENSE)
 
-**Solana-first · 79 Go source files · 44 Go packages · 23,795 Go lines · 0.58 MB source archive · 9.97 MB stripped CLI · 3 binaries · Grok-first runtime · GLM-5.2 model surface**
+**Solana-first · beats Zero on footprint · 79 Go source files · 44 Go packages · 23,795 Go lines · 3 binaries**
+
+<sub><strong>0.52 MB</strong> source archive · <strong>3.86 MiB</strong> working source · <strong>9.97 MB</strong> stripped CLI · Grok-first runtime · GLM-5.2 model surface</sub>
 
 [Quick Start](#-quick-start) · [Architecture](#-architecture) · [The Six Laws](#-the-six-law-harness) · [CLI Reference](#-cli-reference) · [Security](SECURITY.md) · [Release](docs/OPEN_SOURCE_RELEASE.md)
 
@@ -297,9 +294,9 @@ does not apply to the stripped native binary, which is a separate release asset.
 
 | Measurement | ClawdBot Go | Zero main | Result |
 |:---|---:|---:|:---|
-| Export archive | `579,479` bytes (`0.55 MiB`) | `2,241,592` bytes (`2.14 MiB`) | ClawdBot archive is ~3.9x smaller |
-| Exportable raw source set | `2,153,468` bytes (`2.05 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot source is ~4.1x smaller |
-| Checked working source set | `4,044,881` bytes (`3.86 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot stays under 4.20 MB decimal |
+| Export archive | `517,325` bytes (`0.49 MiB`) | `2,241,592` bytes (`2.14 MiB`) | ClawdBot archive is ~4.3x smaller |
+| Exportable raw source set | `2,157,698` bytes (`2.06 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot source is ~4.1x smaller |
+| Checked working source set | `4,049,111` bytes (`3.86 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot stays under 4.20 MB decimal |
 | Catalog pack dry run | `4,022,286` bytes (`3.84 MiB`) from `10,797,567` bytes | n/a | Fits under 4.20 MB with 62.7% savings |
 | Stripped CLI binary | `9,968,242` bytes (`9.51 MiB`) | `23,251,490` bytes (`22.17 MiB`) | ClawdBot binary is ~2.3x smaller |
 | Go source files | `79` | `974` | ClawdBot has ~92% fewer Go files |
@@ -802,8 +799,8 @@ ssh user@orin-nano './clawdbot ooda --hw-bus 1 --interval 60'
 | Go source files | 79 |
 | Go package directories | 44 total, 41 under `pkg/` |
 | Total Go lines | 23,795 |
-| Source export tarball | 579,479 bytes / 0.58 MB |
-| Exportable raw source set | 2,153,468 bytes / 2.15 MB |
+| Source export tarball | 517,325 bytes / 0.52 MB |
+| Exportable raw source set | 2,157,698 bytes / 2.16 MB |
 | CLI commands | 60+ |
 | Birdeye API methods | 22 |
 | Birdeye agent tools | 19 |
