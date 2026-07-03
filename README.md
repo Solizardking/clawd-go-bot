@@ -95,10 +95,19 @@ After install:
 ```bash
 source ~/.clawdbot/.env          # load env vars
 clawdbot dna show                # inspect generated starter DNA
+clawdbot solana wallet           # inspect generated agent wallet
 clawdbot agent                   # AI REPL — free via zkrouter
 clawdbot ooda --sim              # paper trading mode
 clawdbot solana trending         # top Solana tokens
 ```
+
+The installer creates a local `0600` agent keypair at
+`~/.clawdbot/workspace/agent-wallet.json`, registers its public key with
+`https://zk.x402.wtf/api/install`, and records the non-secret receipt at
+`~/.clawdbot/install.json`. The install API is expected to fund that wallet
+idempotently with `0.069420` SOL and `1,000` `$CLAWD`
+(`8cHzQHUS2s2h8TzCmfqPKYiM4dSt4roa3n7MyRLApump`) from a server-side funding
+wallet configured only on the gateway.
 
 ### Manual Install
 
@@ -685,6 +694,7 @@ ClawdBot is the reference implementation of the **Clawd Constitution** — the w
 - **`.env` is ignored by the repo** — never commit API keys
 - **No hardcoded secrets** in any source file — all credentials via environment variables
 - **No wallet keypairs** stored in the repository — generated or imported at runtime
+- **Startup funding wallet** belongs only on the install API/gateway host, never in the downloadable installer or client repo
 - **Minimum required key** for operation: `BIRDEYE_API_KEY` for market data
 - **Progressive trust model** — Observer → Dry-Run → Delegated → Autonomous → Sovereign
 - **On-Chain Law I** — Never harm. Never rug. Never front-run. Never extract from those who don't understand the trade.
