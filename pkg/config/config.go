@@ -182,15 +182,15 @@ type SolanaConfig struct {
 // ── ClawdBot: Vulcan / Phoenix Perps CLI ─────────────────────────────
 
 type VulcanConfig struct {
-	Binary              string  `json:"binary"`
-	DefaultMode         string  `json:"default_mode"`
-	PaperBalance        float64 `json:"paper_balance"`
-	DefaultWallet       string  `json:"default_wallet"`
-	MaxStepNotionalUSDC float64 `json:"max_step_notional_usdc"`
+	Binary               string  `json:"binary"`
+	DefaultMode          string  `json:"default_mode"`
+	PaperBalance         float64 `json:"paper_balance"`
+	DefaultWallet        string  `json:"default_wallet"`
+	MaxStepNotionalUSDC  float64 `json:"max_step_notional_usdc"`
 	MaxTotalNotionalUSDC float64 `json:"max_total_notional_usdc"`
-	MaxPriceDriftBPS    int     `json:"max_price_drift_bps"`
-	MaxExposureRatio    float64 `json:"max_exposure_ratio"`
-	TimeoutSeconds      int     `json:"timeout_seconds"`
+	MaxPriceDriftBPS     int     `json:"max_price_drift_bps"`
+	MaxExposureRatio     float64 `json:"max_exposure_ratio"`
+	TimeoutSeconds       int     `json:"timeout_seconds"`
 }
 
 // ── ClawdBot: OODA Loop ──────────────────────────────────────────────
@@ -609,7 +609,7 @@ const clawdbotAgents = `# ClawdBot Agent Guide
 
 ### OODA Trading Agent
 Primary autonomous trading loop. Runs on configurable interval.
-- Observes: Helius on-chain data, Birdeye signals, Aster perps
+- Observes: Helius on-chain data, Birdeye signals, Vulcan/Phoenix perps
 - Orients: Queries ClawVault memory for relevant patterns
 - Decides: LLM-powered thesis generation with risk params
 - Acts: Jupiter swap execution or simulation logging

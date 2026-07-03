@@ -172,6 +172,7 @@ func BuildCockpitReport(cfg *config.Config, now time.Time) CockpitReport {
 		{Name: "Jupiter", Status: configured(cfg.Solana.JupiterEndpoint != ""), Type: "spot_router"},
 		{Name: "Aster", Status: configured(cfg.Solana.AsterAPIKey != ""), Type: "perps"},
 		{Name: "Phoenix", Status: configured(cfg.Solana.PhoenixAPIURL != ""), Type: "perps"},
+		{Name: "Vulcan", Status: configured(cfg.Vulcan.Binary != ""), Type: "perps_cli"},
 		{Name: "LLM", Status: configured(len(cfg.ModelList) > 0), Type: "agent"},
 	}
 	readiness := computeReadiness(cfg, connectors)

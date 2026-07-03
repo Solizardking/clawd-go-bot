@@ -21,6 +21,7 @@ CORE_AI_REF="${CLAWDBOT_CORE_AI_REF:-clawd-stack-integration}"
 CORE_AI_DIR="${CLAWDBOT_CORE_AI_DIR:-$INSTALL_DIR/core-ai}"
 CORE_AI_MCP_CONFIG="${CLAWDBOT_CORE_AI_MCP_CONFIG:-$INSTALL_DIR/core-ai.mcp.json}"
 INSTALL_CORE_AI="${CLAWDBOT_INSTALL_CORE_AI:-0}"
+INSTALL_VULCAN="${CLAWDBOT_INSTALL_VULCAN:-1}"
 
 # ── Colours ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'
@@ -156,6 +157,28 @@ install_core_ai() {
   success "MCP config written to $CORE_AI_MCP_CONFIG"
 }
 
+install_vulcan() {
+  if [[ "$INSTALL_VULCAN" == "0" ]]; then
+    warn "Skipping Vulcan install (CLAWDBOT_INSTALL_VULCAN=0)"
+    return
+  fi
+  if check_cmd vulcan; then
+    success "Vulcan: $(command -v vulcan)"
+    return
+  fi
+  if ! check_cmd curl; then
+    warn "curl not found; skipping Vulcan install"
+    return
+  fi
+  info "Installing Vulcan CLI for Phoenix paper/live perps..."
+  curl -fsSL https://github.com/Ellipsis-Labs/vulcan-cli/releases/latest/download/install.sh | sh || warn "Vulcan install failed; run clawdbot perps health after installing vulcan"
+  if check_cmd vulcan; then
+    success "Vulcan: $(command -v vulcan)"
+  else
+    warn "Vulcan was not found on PATH after install; ensure ~/.local/bin is on PATH"
+  fi
+}
+
 if ! check_cmd go; then
   echo
   warn "Go not found. Installing Go 1.22..."
@@ -209,6 +232,8 @@ success "Binary built: $INSTALL_DIR/bin/clawdbot"
 mkdir -p "$BIN_DIR"
 cp "$INSTALL_DIR/bin/clawdbot" "$BIN_DIR/clawdbot"
 success "Installed to $BIN_DIR/clawdbot"
+
+install_vulcan
 
 # Add to PATH if needed
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then

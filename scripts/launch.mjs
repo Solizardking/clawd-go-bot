@@ -141,6 +141,7 @@ function checkEnv() {
     'HELIUS_API_KEY', 'HELIUS_RPC_URL',
     'JUPITER_API_KEY', 'JUPITER_ENDPOINT',
     'ASTER_API_KEY', 'ASTER_API_SECRET',
+    'VULCAN_BIN', 'VULCAN_DEFAULT_MODE',
     'OPENROUTER_API_KEY',
     'SUPABASE_URL', 'SUPABASE_SERVICE_KEY',
   ];
@@ -159,7 +160,7 @@ function animatedBoot() {
     const bootLines = [
       `${C.dim}    │${C.teal}  🦞 Sentient Solana Trading Intelligence${C.dim}                     │${C.reset}`,
       `${C.dim}    │${C.amber}  OODA Loop · ClawVault Memory · Birdeye Analytics${C.dim}            │${C.reset}`,
-      `${C.dim}    │${C.purple}  Aster Perps · Jupiter Swaps · Helius RPC${C.dim}                    │${C.reset}`,
+      `${C.dim}    │${C.purple}  Vulcan Phoenix Perps · Jupiter Swaps · Helius RPC${C.dim}            │${C.reset}`,
       `${C.dim}    │${C.green}  $CLAWD :: Droids Lead The Way${C.dim}                                 │${C.reset}`,
     ];
     

@@ -126,6 +126,7 @@ func main() {
 			{"name": "Birdeye", "status": envStatus("BIRDEYE_API_KEY"), "type": "analytics"},
 			{"name": "Jupiter", "status": envStatus("JUPITER_API_KEY"), "type": "swap"},
 			{"name": "Aster", "status": envStatus("ASTER_API_KEY"), "type": "perps"},
+			{"name": "Vulcan", "status": binaryStatus("vulcan"), "type": "perps_cli"},
 			{"name": "OpenRouter", "status": envStatus("OPENROUTER_API_KEY"), "type": "llm"},
 			{"name": "Supabase", "status": envStatus("SUPABASE_URL"), "type": "database"},
 		}
@@ -239,6 +240,13 @@ func defaultConfigPath() string {
 
 func envStatus(key string) string {
 	if os.Getenv(key) != "" {
+		return "connected"
+	}
+	return "not_configured"
+}
+
+func binaryStatus(name string) string {
+	if _, err := exec.LookPath(name); err == nil {
 		return "connected"
 	}
 	return "not_configured"

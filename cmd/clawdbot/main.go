@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -98,7 +99,7 @@ Features:
   • Six-law trading harness (3 on-chain + 3 off-chain)
   • Trading cockpit, risk gate, doctor, and performance bench
   • ClawdBot Strategy: RSI + EMA cross + ATR signal engine
-  • Solana: Jupiter swaps, Birdeye analytics, Helius RPC, Aster perps
+  • Solana: Jupiter swaps, Birdeye analytics, Helius RPC, Vulcan/Phoenix perps
   • Arduino Modulino® I2C: LEDs, buzzer, buttons, knob, sensors
   • Dexter deep research agent
   • Multi-channel: Telegram, Discord, CLI
@@ -482,6 +483,7 @@ func NewOnboardCommand() *cobra.Command {
 			fmt.Printf("  %sclawdbot agent -m \"Hello\"%s\n", colorGreen, colorReset)
 			fmt.Printf("  %sclawdbot ooda --interval 60%s\n", colorGreen, colorReset)
 			fmt.Printf("  %sclawdbot solana wallet%s\n", colorGreen, colorReset)
+			fmt.Printf("  %sclawdbot perps quickstart%s\n", colorGreen, colorReset)
 			fmt.Printf("  %sclawdbot skills birth --install%s\n", colorGreen, colorReset)
 			return nil
 		},
@@ -533,6 +535,8 @@ func NewStatusCommand() *cobra.Command {
 			fmt.Printf("  Terminal:  %s\n", config.TerminalURL)
 			fmt.Printf("  Jupiter:     %s\n", boolIcon(cfg.Solana.JupiterEndpoint != ""))
 			fmt.Printf("  Aster DEX:   %s\n", boolIcon(cfg.Solana.AsterAPIKey != ""))
+			_, vulcanErr := exec.LookPath(cfg.Vulcan.Binary)
+			fmt.Printf("  Vulcan CLI:  %s (%s)\n", boolIcon(vulcanErr == nil), cfg.Vulcan.DefaultMode)
 			fmt.Printf("  Wallet:      %s\n", truncate(cfg.Solana.WalletPubkey, 20))
 
 			fmt.Printf("\n%sChannels:%s\n", colorPurple, colorReset)
@@ -783,7 +787,7 @@ func NewOODACommand() *cobra.Command {
 		Short: "Start autonomous OODA trading loop",
 		Long: `Start the Observe-Orient-Decide-Act autonomous trading cycle.
 The agent will continuously:
-  1. OBSERVE: Pull Helius on-chain + Birdeye OHLCV + Aster perps
+  1. OBSERVE: Pull Helius on-chain + Birdeye OHLCV + Vulcan/Phoenix perps
   2. ORIENT:  RSI/EMA/ATR strategy evaluation + ClawVault recall
   3. DECIDE:  Signal scoring (strength × confidence threshold)
   4. ACT:     Open/close positions, store vault entries, adjust params
@@ -2328,139 +2332,87 @@ func newPerpsGridCmd() *cobra.Command {
 	return cmd
 }
 
-// perps order market|limit — place orders via Phoenix RPC + Solana tx submission
+// perps order market|limit — place one-shot orders through Vulcan
 func newPerpsOrderCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "order",
-		Short: "Place a market or limit order (requires wallet key)",
+		Short: "Place a market or limit order through Vulcan, defaulting to paper mode",
 	}
 	cmd.AddCommand(newPerpsMarketOrderCmd(), newPerpsLimitOrderCmd())
 	return cmd
 }
 
 func newPerpsMarketOrderCmd() *cobra.Command {
-	var symbol, side, keyPath string
-	var qty float64
-	var reduceOnly bool
+	var spec vulcan.OrderSpec
 
 	cmd := &cobra.Command{
 		Use:   "market",
-		Short: "Place a market order on Phoenix perps",
+		Short: "Place a market order through Vulcan",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, _ := config.Load()
-			if keyPath == "" {
-				keyPath = cfg.Solana.WalletKeyPath
+			r := newVulcanRunner(cfg)
+			spec.OrderType = "market"
+			if spec.Wallet == "" {
+				spec.Wallet = cfg.Vulcan.DefaultWallet
 			}
-			if keyPath == "" {
-				return fmt.Errorf("wallet key path required: set --key or WALLET_KEY_PATH or wallet_key_path in config")
-			}
-			kp, err := phoenix.LoadKeypair(keyPath)
+			vargs, err := r.OrderArgs(spec)
 			if err != nil {
-				return fmt.Errorf("load keypair: %w", err)
+				return err
 			}
-			authority := kp.Pubkey()
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-
-			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
-			fmt.Printf("%s[PERPS]%s Building market order: %s %s %s (qty=%.4f)…\n",
-				colorGreen, colorReset, side, symbol, authority[:8]+"…", qty)
-
-			ixs, err := cl.BuildMarketOrder(ctx, phoenix.MarketOrderParams{
-				Authority:  authority,
-				Symbol:     strings.ToUpper(symbol),
-				Side:       side,
-				Quantity:   qty,
-				ReduceOnly: reduceOnly,
-			})
-			if err != nil {
-				return fmt.Errorf("build order: %w", err)
-			}
-			fmt.Printf("%s[PERPS]%s Got %d instructions, signing and sending via RPC…\n",
-				colorTeal, colorReset, len(ixs))
-
-			rpcURL := cfg.Solana.HeliusRPCURL
-			sig, err := phoenix.SignAndSend(ctx, kp, ixs, rpcURL)
-			if err != nil {
-				return fmt.Errorf("send tx: %w", err)
-			}
-			fmt.Printf("\n%s[PERPS]%s ✓ Order submitted!\n", colorGreen, colorReset)
-			fmt.Printf("  Signature: %s%s%s\n", colorTeal, sig, colorReset)
-			fmt.Printf("  Explorer:  https://solscan.io/tx/%s\n", sig)
-			return nil
+			return runVulcanAndWrite(ctx, r, vargs)
 		},
 	}
-	cmd.Flags().StringVar(&symbol, "symbol", "SOL", "Market symbol (e.g. SOL, BTC, ETH)")
-	cmd.Flags().StringVar(&side, "side", "", "Order side: buy or sell")
-	cmd.Flags().Float64Var(&qty, "qty", 0, "Order quantity in base asset tokens")
-	cmd.Flags().BoolVar(&reduceOnly, "reduce-only", false, "Reduce position only (close)")
-	cmd.Flags().StringVar(&keyPath, "key", "", "Path to Solana keypair JSON (default: config wallet_key_path)")
+	addVulcanOrderFlags(cmd, &spec)
 	_ = cmd.MarkFlagRequired("side")
 	return cmd
 }
 
 func newPerpsLimitOrderCmd() *cobra.Command {
-	var symbol, side, keyPath string
-	var qty, price float64
-	var reduceOnly bool
+	var spec vulcan.OrderSpec
 
 	cmd := &cobra.Command{
 		Use:   "limit",
-		Short: "Place a limit order on Phoenix perps",
+		Short: "Place a limit order through Vulcan",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, _ := config.Load()
-			if keyPath == "" {
-				keyPath = cfg.Solana.WalletKeyPath
+			r := newVulcanRunner(cfg)
+			spec.OrderType = "limit"
+			if spec.Wallet == "" {
+				spec.Wallet = cfg.Vulcan.DefaultWallet
 			}
-			if keyPath == "" {
-				return fmt.Errorf("wallet key path required: set --key or wallet_key_path in config")
-			}
-			kp, err := phoenix.LoadKeypair(keyPath)
+			vargs, err := r.OrderArgs(spec)
 			if err != nil {
-				return fmt.Errorf("load keypair: %w", err)
+				return err
 			}
-			authority := kp.Pubkey()
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-
-			cl := phoenix.NewClient(cfg.Solana.PhoenixAPIURL)
-			fmt.Printf("%s[PERPS]%s Building limit order: %s %s @ $%.4f (qty=%.4f)…\n",
-				colorGreen, colorReset, side, symbol, price, qty)
-
-			ixs, err := cl.BuildLimitOrder(ctx, phoenix.LimitOrderParams{
-				Authority:  authority,
-				Symbol:     strings.ToUpper(symbol),
-				Side:       side,
-				Quantity:   qty,
-				Price:      price,
-				ReduceOnly: reduceOnly,
-			})
-			if err != nil {
-				return fmt.Errorf("build order: %w", err)
-			}
-			fmt.Printf("%s[PERPS]%s Got %d instructions, signing and sending via RPC…\n",
-				colorTeal, colorReset, len(ixs))
-
-			rpcURL := cfg.Solana.HeliusRPCURL
-			sig, err := phoenix.SignAndSend(ctx, kp, ixs, rpcURL)
-			if err != nil {
-				return fmt.Errorf("send tx: %w", err)
-			}
-			fmt.Printf("\n%s[PERPS]%s ✓ Limit order submitted!\n", colorGreen, colorReset)
-			fmt.Printf("  Signature: %s%s%s\n", colorTeal, sig, colorReset)
-			fmt.Printf("  Explorer:  https://solscan.io/tx/%s\n", sig)
-			return nil
+			return runVulcanAndWrite(ctx, r, vargs)
 		},
 	}
-	cmd.Flags().StringVar(&symbol, "symbol", "SOL", "Market symbol")
-	cmd.Flags().StringVar(&side, "side", "", "Order side: buy or sell")
-	cmd.Flags().Float64Var(&qty, "qty", 0, "Order quantity in base asset tokens")
-	cmd.Flags().Float64Var(&price, "price", 0, "Limit price in USDC")
-	cmd.Flags().BoolVar(&reduceOnly, "reduce-only", false, "Reduce position only")
-	cmd.Flags().StringVar(&keyPath, "key", "", "Path to Solana keypair JSON")
+	addVulcanOrderFlags(cmd, &spec)
 	_ = cmd.MarkFlagRequired("side")
 	_ = cmd.MarkFlagRequired("price")
 	return cmd
+}
+
+func addVulcanOrderFlags(cmd *cobra.Command, spec *vulcan.OrderSpec) {
+	cmd.Flags().StringVar(&spec.Mode, "mode", "paper", "Execution mode: paper, dry-run, live")
+	cmd.Flags().StringVar(&spec.Symbol, "symbol", "SOL", "Market symbol")
+	cmd.Flags().StringVar(&spec.Side, "side", "", "Order side: buy or sell")
+	cmd.Flags().Float64Var(&spec.Size, "size", 0, "Order size in base lots")
+	cmd.Flags().Float64Var(&spec.Tokens, "tokens", 0, "Order size in base tokens")
+	cmd.Flags().Float64Var(&spec.Tokens, "qty", 0, "Alias for --tokens")
+	cmd.Flags().Float64Var(&spec.NotionalUSDC, "notional-usdc", 0, "Order notional in USDC")
+	cmd.Flags().Float64Var(&spec.Price, "price", 0, "Limit price in USDC")
+	cmd.Flags().Float64Var(&spec.TP, "tp", 0, "Take-profit price")
+	cmd.Flags().Float64Var(&spec.SL, "sl", 0, "Stop-loss price")
+	cmd.Flags().BoolVar(&spec.Isolated, "isolated", false, "Use isolated margin for live orders")
+	cmd.Flags().Float64Var(&spec.Collateral, "collateral", 0, "Isolated collateral in USDC")
+	cmd.Flags().BoolVar(&spec.ReduceOnly, "reduce-only", false, "Reduce position only")
+	cmd.Flags().BoolVar(&spec.Yes, "yes", false, "Required acknowledgement for live mode")
+	cmd.Flags().StringVar(&spec.Wallet, "wallet", "", "Vulcan wallet name for live mode")
 }
 
 // pnlColor returns the ANSI color for a PnL value.

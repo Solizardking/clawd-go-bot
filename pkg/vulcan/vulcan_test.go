@@ -57,16 +57,35 @@ func TestOrderArgsLiveMarket(t *testing.T) {
 	}
 }
 
+func TestOrderArgsLiveMarketSizeIsPositional(t *testing.T) {
+	r := New(Config{})
+	args, err := r.OrderArgs(OrderSpec{
+		Mode:      ModeLive,
+		Symbol:    "SOL",
+		Side:      "buy",
+		OrderType: "market",
+		Size:      2,
+		Yes:       true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"trade", "market-buy", "SOL", "--yes", "2", "-o", "json"}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("args = %#v, want %#v", args, want)
+	}
+}
+
 func TestOrderArgsLimitLiveRequiresBaseLots(t *testing.T) {
 	r := New(Config{})
 	_, err := r.OrderArgs(OrderSpec{
-		Mode:    ModeLive,
-		Symbol:  "SOL",
-		Side:    "buy",
+		Mode:      ModeLive,
+		Symbol:    "SOL",
+		Side:      "buy",
 		OrderType: "limit",
-		Tokens:  0.1,
-		Price:   200,
-		Yes:     true,
+		Tokens:    0.1,
+		Price:     200,
+		Yes:       true,
 	})
 	if err == nil {
 		t.Fatal("expected base-lots error")

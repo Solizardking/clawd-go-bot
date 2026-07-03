@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -61,6 +62,7 @@ func Run(options Options) Report {
 		workspaceCheck(options.WorkspacePath),
 		tradingCheck(cfg),
 		connectorsCheck(cfg),
+		vulcanCheck(cfg),
 		zkCheck(options.ProjectRoot),
 	}
 	report := Report{
@@ -175,6 +177,36 @@ func connectorsCheck(cfg *config.Config) Check {
 		message = "some market data connectors are missing"
 	}
 	return Check{ID: "connectors.market_data", Label: "Market data connectors", Status: status, Message: message, Details: map[string]any{"missing": missing}}
+}
+
+func vulcanCheck(cfg *config.Config) Check {
+	bin := strings.TrimSpace(cfg.Vulcan.Binary)
+	if bin == "" {
+		bin = "vulcan"
+	}
+	path, err := exec.LookPath(bin)
+	if err != nil {
+		return Check{
+			ID:      "perps.vulcan",
+			Label:   "Vulcan perps CLI",
+			Status:  StatusWarn,
+			Message: "vulcan binary is not on PATH; paper perps quickstart cannot run yet",
+			Details: map[string]any{
+				"binary":  bin,
+				"install": "curl -fsSL https://github.com/Ellipsis-Labs/vulcan-cli/releases/latest/download/install.sh | sh",
+			},
+		}
+	}
+	return Check{
+		ID:      "perps.vulcan",
+		Label:   "Vulcan perps CLI",
+		Status:  StatusPass,
+		Message: "vulcan binary is available",
+		Details: map[string]any{
+			"binary": path,
+			"mode":   cfg.Vulcan.DefaultMode,
+		},
+	}
 }
 
 func zkCheck(projectRoot string) Check {

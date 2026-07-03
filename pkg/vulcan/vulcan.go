@@ -26,15 +26,15 @@ const (
 )
 
 type Config struct {
-	Binary              string
-	DefaultMode         string
-	PaperBalance        float64
-	Timeout             time.Duration
-	MaxStepNotionalUSDC float64
+	Binary               string
+	DefaultMode          string
+	PaperBalance         float64
+	Timeout              time.Duration
+	MaxStepNotionalUSDC  float64
 	MaxTotalNotionalUSDC float64
-	MaxPriceDriftBPS    int
-	MaxExposureRatio    float64
-	Wallet              string
+	MaxPriceDriftBPS     int
+	MaxExposureRatio     float64
+	Wallet               string
 }
 
 func (c Config) normalized() Config {
@@ -168,23 +168,23 @@ func NeedLiveAck(mode string, yes bool) error {
 }
 
 type OrderSpec struct {
-	Mode          string
-	Symbol        string
-	Side          string
-	OrderType     string
-	Size          float64
-	Tokens        float64
-	NotionalUSDC  float64
-	Price         float64
-	TP            float64
-	SL            float64
-	Isolated      bool
-	Collateral    float64
-	ReduceOnly    bool
-	Yes           bool
-	Wallet        string
-	InitPaper     bool
-	PaperBalance  float64
+	Mode         string
+	Symbol       string
+	Side         string
+	OrderType    string
+	Size         float64
+	Tokens       float64
+	NotionalUSDC float64
+	Price        float64
+	TP           float64
+	SL           float64
+	Isolated     bool
+	Collateral   float64
+	ReduceOnly   bool
+	Yes          bool
+	Wallet       string
+	InitPaper    bool
+	PaperBalance float64
 }
 
 func (r *Runner) PaperInitArgs(balance float64) []string {
@@ -233,6 +233,7 @@ func (r *Runner) OrderArgs(spec OrderSpec) ([]string, error) {
 	if spec.OrderType == "" {
 		spec.OrderType = "market"
 	}
+	spec.Wallet = firstNonEmpty(spec.Wallet, r.cfg.Wallet)
 	if spec.Symbol == "" {
 		return nil, errors.New("symbol is required")
 	}
@@ -276,7 +277,11 @@ func (r *Runner) OrderArgs(spec OrderSpec) ([]string, error) {
 		args = append(args, "-w", spec.Wallet)
 	}
 	if spec.OrderType == "market" {
-		args = appendSizeFlags(args, spec.Size, spec.Tokens, spec.NotionalUSDC)
+		if spec.Size > 0 {
+			args = append(args, formatFloat(spec.Size))
+		} else {
+			args = appendSizeFlags(args, 0, spec.Tokens, spec.NotionalUSDC)
+		}
 	}
 	if spec.TP > 0 {
 		args = append(args, "--tp", formatFloat(spec.TP))
@@ -321,6 +326,7 @@ func (r *Runner) TWAPArgs(spec TWAPSpec) ([]string, error) {
 	spec.Mode = NormalizeMode(firstNonEmpty(spec.Mode, r.cfg.DefaultMode))
 	spec.Symbol = strings.ToUpper(strings.TrimSpace(spec.Symbol))
 	spec.Side = strings.ToLower(strings.TrimSpace(spec.Side))
+	spec.Wallet = firstNonEmpty(spec.Wallet, r.cfg.Wallet)
 	if spec.Symbol == "" {
 		return nil, errors.New("symbol is required")
 	}
@@ -396,6 +402,7 @@ type GridSpec struct {
 func (r *Runner) GridArgs(spec GridSpec) ([]string, error) {
 	spec.Mode = NormalizeMode(firstNonEmpty(spec.Mode, r.cfg.DefaultMode))
 	spec.Symbol = strings.ToUpper(strings.TrimSpace(spec.Symbol))
+	spec.Wallet = firstNonEmpty(spec.Wallet, r.cfg.Wallet)
 	if spec.Symbol == "" {
 		return nil, errors.New("symbol is required")
 	}

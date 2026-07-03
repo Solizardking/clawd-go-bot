@@ -11,14 +11,14 @@
 
 ### 🦞 Sovereign Solana Trading Intelligence
 
-**Autonomous OODA Agent · ZK Primitives · Privacy by Default · Helius DAS · Aster Perpetuals · Jupiter Swaps · Hardware I2C · Web Console**
+**Autonomous OODA Agent · ZK Primitives · Privacy by Default · Helius DAS · Vulcan/Phoenix Perpetuals · Jupiter Swaps · Hardware I2C · Web Console**
 
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
 [![Solana](https://img.shields.io/badge/Solana-Mainnet-14F195?style=for-the-badge&logo=solana&logoColor=white)](https://solana.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![License](https://img.shields.io/badge/License-MIT-9945FF?style=for-the-badge)](LICENSE)
 
-**53 Go source files · 31 packages · 15,600+ lines · 3 binaries · <10MB RAM · Grok-first**
+**80 Go source files · 41 packages · 21,300+ lines · 3 binaries · <10MB RAM · Grok-first**
 
 [Quick Start](#-quick-start) · [Architecture](#-architecture) · [The Six Laws](#-the-six-law-harness) · [CLI Reference](#-cli-reference) · [Deployment](#-deployment)
 
@@ -50,7 +50,8 @@ The system compiles to three standalone binaries that run on everything from NVI
 | **Birdeye v3 Analytics** | 22 API endpoints, 19 LLM-callable agent tools — token overview, OHLCV, trade feeds, security audits, trending, wallet analytics |
 | **Helius DAS + RPC** | Digital Asset Standard queries (get-asset, owner-assets, search), SPL token operations (balance, supply, largest holders), raw RPC forwarding |
 | **ZK + Privacy Primitives** | Nullifiers, attestations, encrypted state commitments, and privacy-preserving proof flows under `zk-primitives/` |
-| **Aster DEX Perpetuals** | HMAC-signed futures trading — market/limit orders, position management, stop-loss/take-profit, account analytics |
+| **Vulcan/Phoenix Perpetuals** | Official Vulcan CLI integration for Phoenix perps — out-of-box paper mode, JSON agent output, TWAP/grid strategies, live preflight, guardrails |
+| **Aster DEX Perpetuals** | Optional HMAC-signed futures trading — market/limit orders, position management, stop-loss/take-profit, account analytics |
 | **Jupiter Aggregator** | Best-route spot swaps with slippage protection |
 | **Hardware I2C** | Arduino Modulino® sensor cluster — RGB LEDs, buzzer alerts, physical buttons, rotary knob, IMU, temp/humidity, proximity |
 | **Web Console** | React 19 + Vite dashboard — real-time status, Go packages viewer, connector health, environment variables |
@@ -204,7 +205,7 @@ clawdbot-go/
 │   │   └── hardware.go          I2C sensor commands (scan/test/monitor/demo)
 │   └── clawdbot-tui/             TUI launcher (tcell/tview)
 │
-├── pkg/                         ── 31 Packages, 15K+ lines ──
+├── pkg/                         ── 41 Packages, 21K+ lines ──
 │   │
 │   │  ┌─ Core Agent ────────────────────────────────────────┐
 │   ├── agent/                   OODA loop, hooks, tool executor, prompts
@@ -218,6 +219,7 @@ clawdbot-go/
 │   │   │                       Helius RPC + DAS (6 commands)
 │   │   │                       Jupiter swaps
 │   │   └── birdeye_*.go         Types, client, agent tools
+│   ├── vulcan/                  Official Vulcan CLI runner for Phoenix perps
 │   ├── aster/                   Aster DEX perps (HMAC-signed, 14 tools)
 │   │  └─────────────────────────────────────────────────────┘
 │   │
@@ -357,6 +359,32 @@ npx skills add https://github.com/samber/cc-skills-golang --all
 The installer and animated launcher run those seeds unless
 `CLAWDBOT_SKIP_SKILL_SEED=1` is set.
 
+### Phoenix Perps Via Vulcan
+
+ClawdBot uses the official Vulcan CLI for Phoenix perpetual futures execution.
+The safe default is `paper`: simulated fills against live Phoenix prices with
+no wallet signing and no real funds at risk. Live modes require explicit
+operator acknowledgement through `--yes` plus Vulcan wallet setup.
+
+```bash
+clawdbot perps quickstart               # Vulcan health, paper init, market smoke check
+clawdbot perps health                   # Vulcan agent health + Phoenix connectivity
+clawdbot perps paper init --balance 10000
+clawdbot perps order market --symbol SOL --side buy --notional-usdc 25
+clawdbot perps order limit --symbol SOL --side buy --tokens 0.1 --price 150
+clawdbot perps strategy twap --symbol SOL --side buy --notional-usdc 100 --slices 4 --detached
+clawdbot perps strategy grid --symbol SOL --center-on-mark --width-pct 2.5 --levels-per-side 3 --tokens-per-level 0.1 --detached
+clawdbot perps preflight --wallet my-wallet
+```
+
+Install-time behavior:
+
+```bash
+CLAWDBOT_INSTALL_VULCAN=0 ./install.sh   # skip Vulcan install
+VULCAN_DEFAULT_MODE=paper                # default execution mode
+VULCAN_WALLET_NAME=my-wallet             # only needed for live modes
+```
+
 ### Solana — Birdeye
 
 ```bash
@@ -422,7 +450,7 @@ The agent runs an autonomous **Observe → Orient → Decide → Act** cycle:
 │  Birdeye OHLCV   EMA (20/50)    Min strength   ClawVault store  │
 │  SOL price       ATR (14)       Min confidence Auto-optimize    │
 │  Wallet balance  EMA cross      Max positions  Hooks dispatch   │
-│  Aster perps     Momentum       SL/TP calc                      │
+│  Vulcan perps    Momentum       SL/TP calc                      │
 │  Trending scan   ClawVault      Position size                   │
 │                                                                  │
 │  LEARN (every N cycles) ─► Win rate analysis ─► Auto-optimize   │
@@ -455,12 +483,12 @@ go build -o build/clawdbot-web ./web/backend
 |:---------|:-------|:------------|
 | `/api/status` | GET | Agent status (version, Go runtime, uptime, mode, goroutines) |
 | `/api/health` | GET | Health check |
-| `/api/connectors` | GET | Connector status (Helius, Birdeye, Jupiter, Aster, LLM, Supabase) |
+| `/api/connectors` | GET | Connector status (Helius, Birdeye, Jupiter, Vulcan, Aster, LLM, Supabase) |
 | `/api/laws` | GET | Canonical six-law harness |
 | `/api/trading/cockpit` | GET | Trading readiness, risk limits, connector status, law state |
 | `/api/doctor` | GET | Runtime, config, trading, and ZK diagnostics |
 | `/api/config` | GET | Read-only configuration |
-| `/api/packages` | GET | All 31 Go packages with file counts |
+| `/api/packages` | GET | All Go packages with file counts |
 | `/api/env` | GET | Safe (non-secret) environment variables |
 
 ---
