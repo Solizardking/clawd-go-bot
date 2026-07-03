@@ -97,7 +97,7 @@ function resolveOnboardingMode(): boolean {
 }
 
 @customElement("clawdbot-app")
-export class ClawdbotApp extends LitElement {
+export class ClawdBotApp extends LitElement {
   @state() settings: UiSettings = loadSettings();
   @state() password = "";
   @state() tab: Tab = "chat";

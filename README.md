@@ -297,9 +297,9 @@ does not apply to the stripped native binary, which is a separate release asset.
 
 | Measurement | ClawdBot Go | Zero main | Result |
 |:---|---:|---:|:---|
-| Export archive | `579,498` bytes (`0.55 MiB`) | `2,241,592` bytes (`2.14 MiB`) | ClawdBot archive is ~3.9x smaller |
-| Exportable raw source set | `2,153,549` bytes (`2.05 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot source is ~4.1x smaller |
-| Checked working source set | `4,044,962` bytes (`3.86 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot stays under 4.20 MB decimal |
+| Export archive | `579,479` bytes (`0.55 MiB`) | `2,241,592` bytes (`2.14 MiB`) | ClawdBot archive is ~3.9x smaller |
+| Exportable raw source set | `2,153,468` bytes (`2.05 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot source is ~4.1x smaller |
+| Checked working source set | `4,044,881` bytes (`3.86 MiB`) | `8,798,782` bytes (`8.39 MiB`) | ClawdBot stays under 4.20 MB decimal |
 | Catalog pack dry run | `4,022,286` bytes (`3.84 MiB`) from `10,797,567` bytes | n/a | Fits under 4.20 MB with 62.7% savings |
 | Stripped CLI binary | `9,968,242` bytes (`9.51 MiB`) | `23,251,490` bytes (`22.17 MiB`) | ClawdBot binary is ~2.3x smaller |
 | Go source files | `79` | `974` | ClawdBot has ~92% fewer Go files |
@@ -802,8 +802,8 @@ ssh user@orin-nano './clawdbot ooda --hw-bus 1 --interval 60'
 | Go source files | 79 |
 | Go package directories | 44 total, 41 under `pkg/` |
 | Total Go lines | 23,795 |
-| Export archive | 579,498 bytes / 0.58 MB |
-| Exportable raw source set | 2,153,549 bytes / 2.15 MB |
+| Source export tarball | 579,479 bytes / 0.58 MB |
+| Exportable raw source set | 2,153,468 bytes / 2.15 MB |
 | CLI commands | 60+ |
 | Birdeye API methods | 22 |
 | Birdeye agent tools | 19 |

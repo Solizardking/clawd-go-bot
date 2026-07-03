@@ -17,7 +17,7 @@ if (!apiKey) {
 
 const model = process.env.UPSTASH_BOX_AGENT_MODEL || "anthropic/claude-opus-4-7";
 const port = process.env.CLAWDBOT_BOX_PORT || "3000";
-const installClawdbot = envBool("CLAWDBOT_BOX_INSTALL_CLAWDBOT", true);
+const installClawdBot = envBool("CLAWDBOT_BOX_INSTALL_CLAWDBOT", true);
 const fundingEnabled = envBool("CLAWDBOT_INSTALL_FUNDING_ENABLED", false);
 const fundingSend = envBool("CLAWDBOT_INSTALL_FUNDING_SEND", false);
 
@@ -40,7 +40,7 @@ await box.exec.code({
   `,
 });
 
-if (installClawdbot) {
+if (installClawdBot) {
   console.log("Installing ClawdBot inside the box...");
   const install = await box.exec.command(
     [

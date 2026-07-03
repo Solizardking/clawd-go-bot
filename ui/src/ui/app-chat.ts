@@ -7,7 +7,7 @@ import { setLastActiveSessionKey } from "./app-settings";
 import { normalizeBasePath } from "./navigation";
 import type { GatewayHelloOk } from "./gateway";
 import { parseAgentSessionKey } from "./session-key";
-import type { ClawdbotApp } from "./app";
+import type { ClawdBotApp } from "./app";
 
 type ChatHost = {
   connected: boolean;
@@ -42,7 +42,7 @@ export function isChatStopCommand(text: string) {
 export async function handleAbortChat(host: ChatHost) {
   if (!host.connected) return;
   host.chatMessage = "";
-  await abortChatRun(host as unknown as ClawdbotApp);
+  await abortChatRun(host as unknown as ClawdBotApp);
 }
 
 function enqueueChatMessage(host: ChatHost, text: string) {
@@ -64,7 +64,7 @@ async function sendChatMessageNow(
   opts?: { previousDraft?: string; restoreDraft?: boolean },
 ) {
   resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
-  const ok = await sendChatMessage(host as unknown as ClawdbotApp, message);
+  const ok = await sendChatMessage(host as unknown as ClawdBotApp, message);
   if (!ok && opts?.previousDraft != null) {
     host.chatMessage = opts.previousDraft;
   }
@@ -128,8 +128,8 @@ export async function handleSendChat(
 
 export async function refreshChat(host: ChatHost) {
   await Promise.all([
-    loadChatHistory(host as unknown as ClawdbotApp),
-    loadSessions(host as unknown as ClawdbotApp),
+    loadChatHistory(host as unknown as ClawdBotApp),
+    loadSessions(host as unknown as ClawdBotApp),
     refreshChatAvatar(host),
   ]);
   scheduleChatScroll(host as unknown as Parameters<typeof scheduleChatScroll>[0], true);

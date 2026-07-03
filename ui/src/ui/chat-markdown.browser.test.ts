@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { ClawdbotApp } from "./app";
+import { ClawdBotApp } from "./app";
 
-const originalConnect = ClawdbotApp.prototype.connect;
+const originalConnect = ClawdBotApp.prototype.connect;
 
 function mountApp(pathname: string) {
   window.history.replaceState({}, "", pathname);
-  const app = document.createElement("clawdbot-app") as ClawdbotApp;
+  const app = document.createElement("clawdbot-app") as ClawdBotApp;
   document.body.append(app);
   return app;
 }
 
 beforeEach(() => {
-  ClawdbotApp.prototype.connect = () => {
+  ClawdBotApp.prototype.connect = () => {
     // no-op: avoid real gateway WS connections in browser tests
   };
   window.__CLAWDBOT_CONTROL_UI_BASE_PATH__ = undefined;
@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  ClawdbotApp.prototype.connect = originalConnect;
+  ClawdBotApp.prototype.connect = originalConnect;
   window.__CLAWDBOT_CONTROL_UI_BASE_PATH__ = undefined;
   localStorage.clear();
   document.body.innerHTML = "";
