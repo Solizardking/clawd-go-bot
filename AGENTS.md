@@ -21,6 +21,7 @@ clawdbot catalog
 clawdbot catalog skills
 clawdbot catalog agents
 clawdbot catalog zk
+clawdbot catalog compress --dry-run
 ```
 
 ---

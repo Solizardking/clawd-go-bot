@@ -818,6 +818,79 @@ trading endpoints.`,
 		},
 	})
 
+	var (
+		packOut           string
+		packDryRun        bool
+		packIncludeSkills bool
+		packIncludeAgents bool
+		packIncludeZK     bool
+	)
+	packIncludeSkills = true
+	packIncludeAgents = true
+	packIncludeZK = true
+	packOut = filepath.Join(config.DefaultWorkspacePath(), "clawd-agent-pack.tar.gz")
+
+	packCmd := &cobra.Command{
+		Use:     "compress [query]",
+		Aliases: []string{"pack", "compact", "pied-piper"},
+		Short:   "Compress local agent catalog material into a tiny bundle",
+		Long: `Compress the local Clawd catalog into a deterministic tar.gz bundle.
+
+The pack includes matching agent JSON definitions, skill source folders, and the
+ZK primitives surface. It automatically skips regenerated or bulky payloads such
+as node_modules, dist, build, target, caches, screenshots, lockfiles for optional
+TypeScript surfaces, and secret-looking env/key files.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			r := report()
+			result, err := catalog.CompressReport(r, catalog.PackOptions{
+				OutputPath:    packOut,
+				Query:         strings.Join(args, " "),
+				IncludeSkills: packIncludeSkills,
+				IncludeAgents: packIncludeAgents,
+				IncludeZK:     packIncludeZK,
+				DryRun:        packDryRun,
+			})
+			if err != nil {
+				return err
+			}
+			if jsonOut {
+				return writeJSON(result)
+			}
+
+			fmt.Printf("%sClawd Agent Pack%s\n", colorGreen, colorReset)
+			if packDryRun {
+				fmt.Printf("  Output:     %s (dry run)\n", result.OutputPath)
+			} else {
+				fmt.Printf("  Output:     %s\n", result.OutputPath)
+			}
+			fmt.Printf("  Files:      %d (%d skills, %d agents, %d zk files)\n",
+				result.FileCount,
+				result.SkillCount,
+				result.AgentCount,
+				result.ZKFileCount,
+			)
+			fmt.Printf(
+				"  Size:       %s -> %s\n",
+				catalog.FormatBytes(result.OriginalBytes),
+				catalog.FormatBytes(result.PackedBytes),
+			)
+			fmt.Printf("  Saved:      %s (%.1f%%)\n", catalog.FormatBytes(result.SavedBytes), result.SavingsPercent)
+			printCatalogWarnings(result.Warnings)
+			return nil
+		},
+	}
+	packCmd.Flags().StringVar(&packOut, "out", packOut, "Output tar.gz path")
+	packCmd.Flags().BoolVar(
+		&packDryRun,
+		"dry-run",
+		false,
+		"Estimate compressed size without writing the bundle",
+	)
+	packCmd.Flags().BoolVar(&packIncludeSkills, "skills", true, "Include matching skill source folders")
+	packCmd.Flags().BoolVar(&packIncludeAgents, "agents", true, "Include matching agent JSON definitions")
+	packCmd.Flags().BoolVar(&packIncludeZK, "zk", true, "Include ZK primitive source/config surface")
+	cmd.AddCommand(packCmd)
+
 	return cmd
 }
 

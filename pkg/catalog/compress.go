@@ -50,7 +50,7 @@ type PackResult struct {
 
 type PackEntry struct {
 	Path          string `json:"path"`
-	SourcePath    string `json:"sourcePath"`
+	SourcePath    string `json:"sourcePath,omitempty"`
 	Kind          string `json:"kind"`
 	OriginalBytes int64  `json:"originalBytes"`
 	PayloadBytes  int64  `json:"payloadBytes"`
@@ -60,7 +60,6 @@ type packManifest struct {
 	SchemaVersion string      `json:"schemaVersion"`
 	Format        string      `json:"format"`
 	Query         string      `json:"query,omitempty"`
-	Roots         Roots       `json:"roots"`
 	Components    []string    `json:"components"`
 	FileCount     int         `json:"fileCount"`
 	SkillCount    int         `json:"skillCount"`
@@ -94,10 +93,19 @@ var packExcludedDirs = map[string]bool{
 
 var packExcludedFiles = map[string]bool{
 	".DS_Store":         true,
+	".npmrc":            true,
+	".pypirc":           true,
 	"bun.lockb":         true,
+	"credentials.json":  true,
 	"coverage.out":      true,
+	"id_ed25519":        true,
+	"id_rsa":            true,
 	"package-lock.json": true,
 	"pnpm-lock.yaml":    true,
+	"secret.json":       true,
+	"secrets.json":      true,
+	"token.json":        true,
+	"tokens.json":       true,
 	"yarn.lock":         true,
 }
 
@@ -145,7 +153,7 @@ func CompressReport(report Report, opts PackOptions) (PackResult, error) {
 		})
 	}
 
-	manifest, err := buildPackManifest(report, opts, result, payloadBytes)
+	manifest, err := buildPackManifest(opts, result, payloadBytes)
 	if err != nil {
 		return PackResult{}, err
 	}
@@ -206,7 +214,7 @@ func collectPackFiles(report Report, opts PackOptions) ([]packFile, PackResult, 
 	}
 
 	if opts.IncludeSkills {
-		skills := FilterSkills(report.Skills, opts.Query)
+		skills := packSkills(FilterSkills(report.Skills, opts.Query), opts)
 		result.SkillCount = len(skills)
 		for _, skill := range skills {
 			skillFiles, err := collectSkillPackFiles(skill)
@@ -230,6 +238,17 @@ func collectPackFiles(report Report, opts PackOptions) ([]packFile, PackResult, 
 	}
 
 	return files, result, nil
+}
+
+func packSkills(skills []SkillEntry, opts PackOptions) []SkillEntry {
+	out := make([]SkillEntry, 0, len(skills))
+	for _, skill := range skills {
+		if opts.IncludeZK && skill.Source == "zk-primitives" {
+			continue
+		}
+		out = append(out, skill)
+	}
+	return out
 }
 
 func collectSkillPackFiles(skill SkillEntry) ([]packFile, error) {
@@ -327,12 +346,16 @@ func compactJSONPayload(sourcePath string, data []byte) []byte {
 	return compacted.Bytes()
 }
 
-func buildPackManifest(report Report, opts PackOptions, result PackResult, payloadBytes int64) ([]byte, error) {
+func buildPackManifest(opts PackOptions, result PackResult, payloadBytes int64) ([]byte, error) {
+	entries := make([]PackEntry, 0, len(result.Entries))
+	for _, entry := range result.Entries {
+		entry.SourcePath = ""
+		entries = append(entries, entry)
+	}
 	manifest := packManifest{
 		SchemaVersion: PackSchemaVersion,
 		Format:        PackFormat,
 		Query:         strings.TrimSpace(opts.Query),
-		Roots:         report.Roots,
 		Components:    packComponents(opts),
 		FileCount:     result.FileCount,
 		SkillCount:    result.SkillCount,
@@ -340,7 +363,7 @@ func buildPackManifest(report Report, opts PackOptions, result PackResult, paylo
 		ZKFileCount:   result.ZKFileCount,
 		OriginalBytes: result.OriginalBytes,
 		PayloadBytes:  payloadBytes,
-		Entries:       result.Entries,
+		Entries:       entries,
 		Warnings:      result.Warnings,
 	}
 	return json.MarshalIndent(manifest, "", "  ")
@@ -376,6 +399,7 @@ func writePackArchive(outputPath string, manifest []byte, files []packFile, dryR
 			return nil
 		}
 		defer func() {
+			_ = tmp.Close()
 			_ = os.Remove(tmpPath)
 		}()
 	}
@@ -451,9 +475,6 @@ func shouldSkipPackFile(name string) bool {
 	}
 	lower := strings.ToLower(name)
 	if strings.HasPrefix(lower, ".env") {
-		return true
-	}
-	if strings.Contains(lower, "secret") || strings.Contains(lower, "token") {
 		return true
 	}
 	for _, suffix := range []string{".key", ".pem", ".p8"} {

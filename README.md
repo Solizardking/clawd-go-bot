@@ -458,12 +458,19 @@ clawdbot catalog skills zk               # Filter skills for ZK capability
 clawdbot catalog agents                  # List /Users/8bit/agents/agents/src entries
 clawdbot catalog agents zk               # Filter agents for ZK capability
 clawdbot catalog zk                      # Inspect zk-primitives package/program/docs
+clawdbot catalog compress                # Auto-compress agent catalog + skills + ZK surface
+clawdbot catalog compress --dry-run      # Estimate packed size and savings without writing
 clawdbot catalog --json                  # Machine-readable report
 ```
 
 Default catalog roots can be overridden with:
 `CLAWDBOT_SKILLS_DIR`, `CLAWDBOT_AGENTS_DIR`, and
 `CLAWDBOT_ZK_PRIMITIVES_DIR`.
+
+`catalog compress` writes `workspace/clawd-agent-pack.tar.gz` by default. It is
+a deterministic tar.gz pack that skips regenerated or bulky local payloads such
+as `node_modules`, `dist`, `build`, `target`, caches, generated screenshots,
+optional TypeScript lockfiles, and secret-looking env/key files.
 
 ### Birth Skills
 

@@ -9,7 +9,8 @@ dist/** linguist-generated=true
 web/frontend/dist/** linguist-generated=true
 zk-primitives/**/dist/** linguist-generated=true
 zk-primitives/**/node_modules/** linguist-vendored
-ui/src/ui/__screenshots__/** linguist-generated=true
+ui/.vitest-attachments/** linguist-generated=true
+ui/src/**/__screenshots__/** linguist-generated=true
 ui/ClawdBrowser/tsconfig.tsbuildinfo linguist-generated=true
 
 # Keep packaged artifacts out of source archives.
@@ -25,7 +26,8 @@ build/** export-ignore
 dist/** export-ignore
 **/package-lock.json export-ignore
 web/frontend/dist/** export-ignore
-ui/src/ui/__screenshots__/** export-ignore
+ui/.vitest-attachments/** export-ignore
+ui/src/**/__screenshots__/** export-ignore
 ui/ClawdBrowser/public/*.png export-ignore
 ui/ClawdBrowser/tsconfig.tsbuildinfo export-ignore
 zk-primitives/**/dist/** export-ignore
