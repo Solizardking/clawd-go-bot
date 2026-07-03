@@ -1,5 +1,6 @@
 import { html, nothing } from "lit";
 import type { ConfigUiHints } from "../types";
+import { MOONSHOT_KIMI_K2_MODELS } from "../data/moonshot-kimi-k2";
 import { analyzeConfigSchema, renderConfigForm, SECTION_META } from "./config-form";
 import {
   hintForPath,
@@ -97,6 +98,74 @@ type SubsectionEntry = {
 
 const ALL_SUBSECTION = "__all__";
 
+type ModelPreset = {
+  label: string;
+  providerKey: string;
+  providerName: string;
+  baseURL: string;
+  protocol: string;
+  apiKeyEnv: string;
+  primaryModel: string;
+  models: Array<{
+    id: string;
+    name: string;
+    alias?: string;
+    reasoning?: boolean;
+  }>;
+};
+
+const MODEL_PRESETS: ModelPreset[] = [
+  {
+    label: "MiniMax M2.1",
+    providerKey: "minimax",
+    providerName: "MiniMax",
+    baseURL: "https://api.minimax.io/anthropic",
+    protocol: "anthropic-messages",
+    apiKeyEnv: "MINIMAX_API_KEY",
+    primaryModel: "minimax/MiniMax-M2.1",
+    models: [
+      {
+        id: "minimax/MiniMax-M2.1",
+        name: "MiniMax M2.1",
+        alias: "MiniMax M2.1",
+        reasoning: true,
+      },
+    ],
+  },
+  {
+    label: "GLM 4.7",
+    providerKey: "zai",
+    providerName: "Z.AI",
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    protocol: "openai-chat-completions",
+    apiKeyEnv: "ZAI_API_KEY",
+    primaryModel: "zai/glm-4.7",
+    models: [
+      {
+        id: "zai/glm-4.7",
+        name: "GLM 4.7",
+        alias: "GLM 4.7",
+        reasoning: true,
+      },
+    ],
+  },
+  {
+    label: "Kimi K2",
+    providerKey: "moonshot",
+    providerName: "Moonshot",
+    baseURL: "https://api.moonshot.ai/v1",
+    protocol: "openai-chat-completions",
+    apiKeyEnv: "MOONSHOT_API_KEY",
+    primaryModel: "moonshot/kimi-k2-0905-preview",
+    models: MOONSHOT_KIMI_K2_MODELS.map((model) => ({
+      id: `moonshot/${model.id}`,
+      name: model.name,
+      alias: model.alias,
+      reasoning: model.reasoning,
+    })),
+  },
+];
+
 function getSectionIcon(key: string) {
   return sidebarIcons[key as keyof typeof sidebarIcons] ?? sidebarIcons.default;
 }
@@ -178,6 +247,133 @@ function truncateValue(value: unknown, maxLen = 40): string {
   }
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen - 3) + "...";
+}
+
+function cloneRecord(value: Record<string, unknown> | null): Record<string, unknown> {
+  if (!value) return {};
+  if (typeof structuredClone === "function") {
+    return structuredClone(value) as Record<string, unknown>;
+  }
+  return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+}
+
+function parseRawConfig(raw: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // Raw mode may contain JSON5 comments or trailing commas. Fall back to form state.
+  }
+  return {};
+}
+
+function readPath(
+  obj: Record<string, unknown>,
+  path: string[],
+): unknown {
+  let current: unknown = obj;
+  for (const key of path) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+function setPath(
+  obj: Record<string, unknown>,
+  path: string[],
+  value: unknown,
+) {
+  let current = obj;
+  for (const key of path.slice(0, -1)) {
+    const next = current[key];
+    if (!next || typeof next !== "object" || Array.isArray(next)) {
+      current[key] = {};
+    }
+    current = current[key] as Record<string, unknown>;
+  }
+  current[path[path.length - 1]!] = value;
+}
+
+function providerConfigForPreset(
+  config: Record<string, unknown>,
+  preset: ModelPreset,
+) {
+  const existing = readPath(config, [
+    "models",
+    "providers",
+    preset.providerKey,
+  ]);
+  const existingProvider =
+    existing && typeof existing === "object" && !Array.isArray(existing)
+      ? (existing as Record<string, unknown>)
+      : {};
+  const apiKey =
+    typeof existingProvider.apiKey === "string" && existingProvider.apiKey.trim()
+      ? existingProvider.apiKey
+      : `\${${preset.apiKeyEnv}}`;
+
+  return {
+    ...existingProvider,
+    name: preset.providerName,
+    baseURL: preset.baseURL,
+    protocol: preset.protocol,
+    apiKey,
+    models: preset.models,
+  };
+}
+
+function applyModelPreset(props: ConfigProps, preset: ModelPreset) {
+  const config =
+    props.formValue != null
+      ? cloneRecord(props.formValue)
+      : parseRawConfig(props.raw);
+  const providerConfig = providerConfigForPreset(config, preset);
+
+  setPath(config, ["models", "mode"], "merge");
+  setPath(config, ["models", "providers", preset.providerKey], providerConfig);
+  setPath(
+    config,
+    ["agents", "defaults", "model", "primary"],
+    preset.primaryModel,
+  );
+
+  props.onRawChange(`${JSON.stringify(config, null, 2).trimEnd()}\n`);
+  props.onFormPatch(["models", "mode"], "merge");
+  props.onFormPatch(
+    ["models", "providers", preset.providerKey],
+    providerConfig,
+  );
+  props.onFormPatch(
+    ["agents", "defaults", "model", "primary"],
+    preset.primaryModel,
+  );
+}
+
+function renderModelPresets(props: ConfigProps) {
+  return html`
+    <div class="config-presets" aria-label="Model presets">
+      <div class="config-presets__title">Model Presets</div>
+      <div class="config-presets__actions">
+        ${MODEL_PRESETS.map(
+          (preset) => html`
+            <button
+              type="button"
+              class="btn btn--sm"
+              ?disabled=${props.loading || props.saving || props.applying}
+              @click=${() => applyModelPreset(props, preset)}
+            >
+              ${preset.label}
+            </button>
+          `,
+        )}
+      </div>
+    </div>
+  `;
 }
 
 export function renderConfig(props: ConfigProps) {
@@ -375,6 +571,8 @@ export function renderConfig(props: ConfigProps) {
             </div>
           </details>
         ` : nothing}
+
+        ${renderModelPresets(props)}
 
         ${activeSectionMeta && props.formMode === "form"
           ? html`
