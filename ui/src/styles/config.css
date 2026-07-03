@@ -270,6 +270,37 @@
   color: var(--muted);
 }
 
+/* Model Presets */
+.config-presets {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 20px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="light"] .config-presets {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.config-presets__title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.config-presets__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 /* Diff Panel */
 .config-diff {
   margin: 16px 20px 0;
