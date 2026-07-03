@@ -14,6 +14,13 @@ ZKROUTER_BASE="https://clawdrouter-zk.fly.dev/v1"
 RPC_URL="https://zk.x402.wtf/api/solana/rpc-public"
 INSTALL_DIR="${CLAWDBOT_INSTALL_DIR:-$HOME/.clawdbot}"
 BIN_DIR="${CLAWDBOT_BIN_DIR:-$HOME/.local/bin}"
+SOURCE_MODE="${CLAWDBOT_SOURCE_MODE:-archive}"
+REF="${CLAWDBOT_REF:-main}"
+CORE_AI_REPO="${CLAWDBOT_CORE_AI_REPO:-https://github.com/Solizardking/core-ai}"
+CORE_AI_REF="${CLAWDBOT_CORE_AI_REF:-clawd-stack-integration}"
+CORE_AI_DIR="${CLAWDBOT_CORE_AI_DIR:-$INSTALL_DIR/core-ai}"
+CORE_AI_MCP_CONFIG="${CLAWDBOT_CORE_AI_MCP_CONFIG:-$INSTALL_DIR/core-ai.mcp.json}"
+INSTALL_CORE_AI="${CLAWDBOT_INSTALL_CORE_AI:-0}"
 
 # ── Colours ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'
@@ -55,6 +62,100 @@ check_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+github_archive_url() {
+  local repo_url="$1"
+  local ref="$2"
+  printf "%s/archive/%s.tar.gz" "${repo_url%.git}" "$ref"
+}
+
+install_source_archive() {
+  local repo_url="$1"
+  local ref="$2"
+  local dest="$3"
+  local label="$4"
+  local tmp archive root
+
+  check_cmd curl || die "curl is required to install $label from an archive"
+  check_cmd tar || die "tar is required to install $label from an archive"
+
+  tmp="$(mktemp -d)"
+  archive="$tmp/source.tar.gz"
+  curl -fsSL "$(github_archive_url "$repo_url" "$ref")" -o "$archive"
+  tar -xzf "$archive" -C "$tmp"
+  root="$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -1)"
+  if [[ -z "$root" ]]; then
+    rm -rf "$tmp"
+    die "Could not unpack $label archive"
+  fi
+
+  rm -rf "$dest"
+  mkdir -p "$(dirname "$dest")"
+  mv "$root" "$dest"
+  rm -rf "$tmp"
+}
+
+write_core_ai_mcp_config() {
+  mkdir -p "$(dirname "$CORE_AI_MCP_CONFIG")"
+  cat > "$CORE_AI_MCP_CONFIG" << JSONEOF
+{
+  "mcpServers": {
+    "helius": {
+      "command": "node",
+      "args": ["${CORE_AI_DIR}/helius-mcp/dist/index.js"],
+      "env": {
+        "HELIUS_API_KEY": "\${HELIUS_API_KEY}",
+        "SOLANA_RPC_URL": "\${SOLANA_RPC_URL}"
+      }
+    },
+    "pump-mcp": {
+      "command": "node",
+      "args": ["${CORE_AI_DIR}/mcp-server/dist/index.js"],
+      "env": {
+        "SOLANA_RPC_URL": "\${SOLANA_RPC_URL}",
+        "HELIUS_API_KEY": "\${HELIUS_API_KEY}"
+      }
+    },
+    "zkcompression": {
+      "type": "http",
+      "url": "https://www.zkcompression.com/mcp"
+    }
+  }
+}
+JSONEOF
+}
+
+install_core_ai() {
+  info "Installing core-ai sidecar (${CORE_AI_REF})..."
+
+  if [[ -d "$CORE_AI_DIR/.git" ]]; then
+    git -C "$CORE_AI_DIR" fetch --depth=1 origin "$CORE_AI_REF" --quiet || warn "core-ai fetch failed"
+    git -C "$CORE_AI_DIR" checkout --quiet -B "$CORE_AI_REF" "origin/$CORE_AI_REF" || warn "core-ai checkout failed"
+  elif [[ "$SOURCE_MODE" == "archive" ]]; then
+    install_source_archive "$CORE_AI_REPO" "$CORE_AI_REF" "$CORE_AI_DIR" "core-ai"
+  else
+    git clone --depth=1 --branch "$CORE_AI_REF" --quiet "$CORE_AI_REPO" "$CORE_AI_DIR"
+  fi
+
+  if check_cmd npm; then
+    if [[ -f "$CORE_AI_DIR/helius-mcp/package.json" ]]; then
+      info "Building core-ai helius-mcp..."
+      npm --prefix "$CORE_AI_DIR/helius-mcp" install || warn "helius-mcp dependency install failed"
+      npm --prefix "$CORE_AI_DIR/helius-mcp" run build || warn "helius-mcp build failed"
+    fi
+    if [[ -f "$CORE_AI_DIR/mcp-server/package.json" ]]; then
+      info "Building core-ai pump MCP server..."
+      npm --prefix "$CORE_AI_DIR/mcp-server" install || warn "pump MCP dependency install failed"
+      npm --prefix "$CORE_AI_DIR/mcp-server" run build || warn "pump MCP build failed"
+    fi
+  else
+    warn "npm not found; core-ai source was installed but MCP packages were not built"
+  fi
+
+  write_core_ai_mcp_config
+  success "core-ai sidecar ready at $CORE_AI_DIR"
+  success "MCP config written to $CORE_AI_MCP_CONFIG"
+}
+
 if ! check_cmd go; then
   echo
   warn "Go not found. Installing Go 1.22..."
@@ -80,16 +181,19 @@ success "Go: ${GO_VERSION}"
 # ── Check git ─────────────────────────────────────────────────────────────────
 check_cmd git || die "git is required. Install it and re-run."
 
-# ── Clone or update repo ──────────────────────────────────────────────────────
+# ── Fetch source ──────────────────────────────────────────────────────────────
 REPO_DIR="$INSTALL_DIR/src"
 mkdir -p "$INSTALL_DIR"
 
-if [[ -d "$REPO_DIR/.git" ]]; then
+if [[ "$SOURCE_MODE" == "archive" && ! -d "$REPO_DIR/.git" ]]; then
+  info "Downloading clawdbot-go source archive (${REF})..."
+  install_source_archive "$REPO" "$REF" "$REPO_DIR" "clawdbot-go"
+elif [[ -d "$REPO_DIR/.git" ]]; then
   info "Updating existing repo..."
   git -C "$REPO_DIR" pull --ff-only --quiet
 else
   info "Cloning clawdbot-go..."
-  git clone --depth=1 --quiet "$REPO" "$REPO_DIR"
+  git clone --depth=1 --branch "$REF" --quiet "$REPO" "$REPO_DIR"
 fi
 success "Source ready at $REPO_DIR"
 
@@ -123,7 +227,7 @@ fi
 info "Registering install with clawdrouter..."
 INSTALL_ID=""
 if check_cmd curl; then
-  INSTALL_PAYLOAD="{\"os\":\"${OS}\",\"arch\":\"${ARCH}\",\"version\":\"$(cd "$REPO_DIR" && git rev-parse --short HEAD 2>/dev/null || echo 'unknown')\"}"
+  INSTALL_PAYLOAD="{\"os\":\"${OS}\",\"arch\":\"${ARCH}\",\"version\":\"$(cd "$REPO_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "$REF")\"}"
   INSTALL_RESP="$(curl -sf -X POST "$INSTALL_API" \
     -H "Content-Type: application/json" \
     -d "$INSTALL_PAYLOAD" 2>/dev/null || echo '{}')"
@@ -169,6 +273,12 @@ HELIUS_RPC_URL=${RPC_URL}
 
 # ── Optional channels ─────────────────────────────────────────────
 # TELEGRAM_BOT_TOKEN=your-telegram-token
+
+# ── Optional core-ai sidecar ──────────────────────────────────────
+# Install with: curl -fsSL https://raw.githubusercontent.com/Solizardking/clawdbot-go/main/install.sh | CLAWDBOT_INSTALL_CORE_AI=1 bash
+# CLAWDBOT_CORE_AI_DIR=${CORE_AI_DIR}
+# CLAWDBOT_CORE_AI_REF=${CORE_AI_REF}
+# CLAWDBOT_CORE_AI_MCP_CONFIG=${CORE_AI_MCP_CONFIG}
 ENVEOF
   success ".env written to $ENV_FILE"
 else
@@ -178,6 +288,20 @@ fi
 # Symlink config into home
 if [[ ! -L "$HOME/.clawdbot" && "$INSTALL_DIR" != "$HOME/.clawdbot" ]]; then
   ln -sfn "$INSTALL_DIR" "$HOME/.clawdbot"
+fi
+
+# ── Optional core-ai sidecar ─────────────────────────────────────────────────
+if [[ "$INSTALL_CORE_AI" == "1" ]]; then
+  install_core_ai
+  if [[ -f "$ENV_FILE" ]] && ! grep -q '^CLAWDBOT_CORE_AI_DIR=' "$ENV_FILE"; then
+    cat >> "$ENV_FILE" << ENVEOF
+
+# ── core-ai sidecar ───────────────────────────────────────────────
+CLAWDBOT_CORE_AI_DIR=${CORE_AI_DIR}
+CLAWDBOT_CORE_AI_REF=${CORE_AI_REF}
+CLAWDBOT_CORE_AI_MCP_CONFIG=${CORE_AI_MCP_CONFIG}
+ENVEOF
+  fi
 fi
 
 # ── Birth skill seed ──────────────────────────────────────────────────────────
@@ -207,6 +331,11 @@ echo -e "  ${CYAN}clawdbot agent${RESET}               # start AI REPL (free via
 echo -e "  ${CYAN}clawdbot ooda --sim${RESET}          # paper trading mode"
 echo -e "  ${CYAN}clawdbot skills birth --install${RESET} # reseed birth skills"
 echo -e "  ${CYAN}clawdbot solana trending${RESET}     # top Solana tokens"
+if [[ "$INSTALL_CORE_AI" == "1" ]]; then
+echo -e "  ${CYAN}${CORE_AI_MCP_CONFIG}${RESET}  # core-ai MCP config"
+else
+echo -e "  ${CYAN}CLAWDBOT_INSTALL_CORE_AI=1 ...${RESET} # optional core-ai MCP sidecar"
+fi
 echo
 echo -e "  ${BOLD}Edit your config:${RESET}  ${CYAN}nano ${ENV_FILE}${RESET}"
 echo -e "  ${BOLD}Runtime repo:${RESET}      ${CYAN}${REPO}${RESET}"
