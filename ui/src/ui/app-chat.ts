@@ -6,7 +6,7 @@ import { scheduleChatScroll } from "./app-scroll";
 import { setLastActiveSessionKey } from "./app-settings";
 import { normalizeBasePath } from "./navigation";
 import type { GatewayHelloOk } from "./gateway";
-import { parseAgentSessionKey } from "../../../src/sessions/session-key-utils.js";
+import { parseAgentSessionKey } from "./session-key";
 import type { ClawdbotApp } from "./app";
 
 type ChatHost = {
