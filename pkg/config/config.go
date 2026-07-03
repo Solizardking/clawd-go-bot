@@ -568,7 +568,7 @@ func applyEnvOverrides(cfg *Config) {
 	}
 	// ClawdBot install ID — used for RPC auth header
 	if v := os.Getenv("CLAWDBOT_INSTALL_ID"); v != "" {
-		// stored for use by Solana RPC client as X-Clawdbot-Id header
+		// stored for use by Solana RPC client as X-ClawdBot-Id header
 		_ = v
 	}
 }
