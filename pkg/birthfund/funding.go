@@ -38,9 +38,9 @@ type Config struct {
 }
 
 type Result struct {
-	Status        string   `json:"status"`
-	Send          bool     `json:"send"`
-	Recipient     string   `json:"recipient"`
+	Status         string   `json:"status"`
+	Send           bool     `json:"send"`
+	Recipient      string   `json:"recipient"`
 	RPCURL         string   `json:"rpcUrl"`
 	SOLAmount      string   `json:"solAmount"`
 	SOLLamports    uint64   `json:"solLamports"`
@@ -94,11 +94,11 @@ func Fund(ctx context.Context, cfg Config, runner Runner) (Result, error) {
 		runner = ExecRunner{}
 	}
 	result := Result{
-		Status:     "disabled",
-		Send:       cfg.Send,
-		Recipient:  strings.TrimSpace(cfg.Recipient),
-		RPCURL:     firstNonEmpty(strings.TrimSpace(cfg.RPCURL), config.PublicRPCURL),
-		SOLAmount:  firstNonEmpty(strings.TrimSpace(cfg.SOLAmount), DefaultSOLAmount),
+		Status:    "disabled",
+		Send:      cfg.Send,
+		Recipient: strings.TrimSpace(cfg.Recipient),
+		RPCURL:    firstNonEmpty(strings.TrimSpace(cfg.RPCURL), config.PublicRPCURL),
+		SOLAmount: firstNonEmpty(strings.TrimSpace(cfg.SOLAmount), DefaultSOLAmount),
 		CLAWDAmount: firstNonEmpty(
 			strings.TrimSpace(cfg.CLAWDAmount),
 			DefaultCLAWDAmount,

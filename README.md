@@ -96,6 +96,7 @@ After install:
 source ~/.clawdbot/.env          # load env vars
 clawdbot dna show                # inspect generated starter DNA
 clawdbot solana wallet           # inspect generated agent wallet
+clawdbot solana fund-agent       # dry-run startup funding plan
 clawdbot agent                   # AI REPL — free via zkrouter
 clawdbot ooda --sim              # paper trading mode
 clawdbot solana trending         # top Solana tokens
@@ -108,6 +109,21 @@ The installer creates a local `0600` agent keypair at
 idempotently with `0.069420` SOL and `1,000` `$CLAWD`
 (`8cHzQHUS2s2h8TzCmfqPKYiM4dSt4roa3n7MyRLApump`) from a server-side funding
 wallet configured only on the gateway.
+
+For local treasury funding from an operator wallet, use the explicit local path:
+
+```bash
+export CLAWDBOT_LOCAL_STARTUP_FUNDING=1
+export CLAWDBOT_BIRTH_FUNDING_SEND=1
+export CLAWDBOT_TREASURY_KEYPAIR=~/.config/solana/id.json
+# or export CLAWDBOT_TREASURY_PRIVATE_KEY=base58-secret-key
+
+curl -fsSL https://raw.githubusercontent.com/Solizardking/clawdbot-go/main/install.sh | CLAWDBOT_INSTALL_COMPLETE=1 bash
+```
+
+`CLAWDBOT_TREASURY_PRIVATE_KEY` is only read from the process environment,
+converted to a temporary `0600` keypair file for `solana` / `spl-token`, then
+removed. It is never written to `.env`, install receipts, or logs.
 
 ### Manual Install
 
@@ -478,6 +494,9 @@ clawdbot solana trending                # Top 20 trending tokens with price/volu
 clawdbot solana search BONK             # Search tokens by name or symbol
 clawdbot solana research <mint>         # Deep research: metadata + market + trade + security
 clawdbot solana wallet                  # Wallet info and SOL balance
+clawdbot solana wallet init             # Generate/reuse local agent wallet
+clawdbot solana fund-agent              # Dry-run 0.069420 SOL + 1,000 $CLAWD funding
+clawdbot solana fund-agent --send       # Send funding with explicit treasury env
 ```
 
 ### Solana — Helius DAS (Digital Asset Standard)
