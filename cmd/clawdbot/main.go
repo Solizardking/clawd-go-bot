@@ -719,9 +719,13 @@ the default all-skills packs:
   - https://github.com/samber/cc-skills-golang --all`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			manifest := skillsPkg.BuildBirthManifest(time.Now(), nil)
-			path, err := skillsPkg.WriteBirthManifest(config.DefaultWorkspacePath(), manifest)
-			if err != nil {
-				return err
+			path := ""
+			if !jsonOut || install {
+				var err error
+				path, err = skillsPkg.WriteBirthManifest(config.DefaultWorkspacePath(), manifest)
+				if err != nil {
+					return err
+				}
 			}
 			if jsonOut {
 				if err := writeJSON(map[string]any{"manifestPath": path, "manifest": manifest}); err != nil {
