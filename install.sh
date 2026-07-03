@@ -400,6 +400,29 @@ elif [[ -n "$AGENT_WALLET_PUBKEY" ]]; then
   info "Startup funding status: ${FUNDING_STATUS}"
 fi
 
+# ── Local install receipt ─────────────────────────────────────────────────────
+mkdir -p "$(dirname "$INSTALL_TRACK_FILE")"
+cat > "$INSTALL_TRACK_FILE" << JSONEOF
+{
+  "installId": "${INSTALL_ID}",
+  "os": "${OS}",
+  "arch": "${ARCH}",
+  "agentWalletPubkey": "${AGENT_WALLET_PUBKEY}",
+  "agentWalletKeypair": "${AGENT_WALLET_PATH}",
+  "agentDnaId": "${AGENT_DNA_ID}",
+  "funding": {
+    "status": "${FUNDING_STATUS}",
+    "solLamports": ${STARTUP_SOL_LAMPORTS},
+    "clawdTokens": ${STARTUP_CLAWD_TOKENS},
+    "clawdMint": "${CLAWD_MINT}",
+    "solSignature": "${SOL_FUNDING_SIGNATURE}",
+    "clawdSignature": "${CLAWD_FUNDING_SIGNATURE}"
+  },
+  "registeredAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+JSONEOF
+success "Install receipt written to $INSTALL_TRACK_FILE"
+
 # ── Write .env ────────────────────────────────────────────────────────────────
 ENV_FILE="$INSTALL_DIR/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -412,11 +435,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
 
 # ── Install identity ──────────────────────────────────────────────
 CLAWDBOT_INSTALL_ID=${INSTALL_ID}
+CLAWDBOT_AGENT_DNA_ID=${AGENT_DNA_ID}
+CLAWDBOT_INSTALL_RECEIPT=${INSTALL_TRACK_FILE}
 
 # ── Free AI via zk.x402.wtf / zkrouter (no key needed) ───────────
 # Public gateway backed by the sovereign \$CLAWD router
 ZKROUTER_BASE_URL=${ZKROUTER_BASE}
-ZKROUTER_API_KEY=clawdbot-free
+ZKROUTER_API_KEY=${ZKROUTER_KEY:-clawdbot-free}
 
 # ── Solana RPC (SolanaTracker-backed, no key needed) ─────────────
 SOLANA_RPC_URL=${RPC_URL}
@@ -428,7 +453,19 @@ HELIUS_RPC_URL=${RPC_URL}
 # BIRDEYE_API_KEY=your-birdeye-key
 
 # ── Wallet (required for live trading) ───────────────────────────
+AGENT_WALLET_PUBLIC_KEY=${AGENT_WALLET_PUBKEY}
+AGENT_WALLET_KEYPAIR=${AGENT_WALLET_PATH}
+SOLANA_WALLET_PUBKEY=${AGENT_WALLET_PUBKEY}
+SOLANA_WALLET_KEYPAIR=${AGENT_WALLET_PATH}
 # WALLET_PRIVATE_KEY=your-base58-private-key
+
+# ── Startup funding request / receipts ───────────────────────────
+CLAWD_TOKEN_MINT=${CLAWD_MINT}
+CLAWDBOT_STARTUP_SOL_LAMPORTS=${STARTUP_SOL_LAMPORTS}
+CLAWDBOT_STARTUP_CLAWD_TOKENS=${STARTUP_CLAWD_TOKENS}
+CLAWDBOT_INSTALL_FUNDING_STATUS=${FUNDING_STATUS}
+CLAWDBOT_SOL_FUNDING_SIGNATURE=${SOL_FUNDING_SIGNATURE}
+CLAWDBOT_CLAWD_FUNDING_SIGNATURE=${CLAWD_FUNDING_SIGNATURE}
 
 # ── Optional channels ─────────────────────────────────────────────
 # TELEGRAM_BOT_TOKEN=your-telegram-token
@@ -445,6 +482,19 @@ ENVEOF
 else
   warn ".env already exists at $ENV_FILE — not overwriting"
 fi
+
+append_env_if_missing "CLAWDBOT_AGENT_DNA_ID" "$AGENT_DNA_ID"
+append_env_if_missing "CLAWDBOT_INSTALL_RECEIPT" "$INSTALL_TRACK_FILE"
+append_env_if_missing "AGENT_WALLET_PUBLIC_KEY" "$AGENT_WALLET_PUBKEY"
+append_env_if_missing "AGENT_WALLET_KEYPAIR" "$AGENT_WALLET_PATH"
+append_env_if_missing "SOLANA_WALLET_PUBKEY" "$AGENT_WALLET_PUBKEY"
+append_env_if_missing "SOLANA_WALLET_KEYPAIR" "$AGENT_WALLET_PATH"
+append_env_if_missing "CLAWD_TOKEN_MINT" "$CLAWD_MINT"
+append_env_if_missing "CLAWDBOT_STARTUP_SOL_LAMPORTS" "$STARTUP_SOL_LAMPORTS"
+append_env_if_missing "CLAWDBOT_STARTUP_CLAWD_TOKENS" "$STARTUP_CLAWD_TOKENS"
+append_env_if_missing "CLAWDBOT_INSTALL_FUNDING_STATUS" "$FUNDING_STATUS"
+append_env_if_missing "CLAWDBOT_SOL_FUNDING_SIGNATURE" "$SOL_FUNDING_SIGNATURE"
+append_env_if_missing "CLAWDBOT_CLAWD_FUNDING_SIGNATURE" "$CLAWD_FUNDING_SIGNATURE"
 
 # Symlink config into home
 if [[ ! -L "$HOME/.clawdbot" && "$INSTALL_DIR" != "$HOME/.clawdbot" ]]; then
