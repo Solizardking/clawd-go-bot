@@ -18,7 +18,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![License](https://img.shields.io/badge/License-MIT-9945FF?style=for-the-badge)](LICENSE)
 
-**70 Go source files · 42 packages · 21,400+ lines · 3 binaries · <10MB RAM · Grok-first**
+*Solana-first* 70 Go source files · 42 packages · 21,400+ lines · 3 binaries · <10MB RAM · GLM-5.2-first**
 
 [Quick Start](#-quick-start) · [Architecture](#-architecture) · [The Six Laws](#-the-six-law-harness) · [CLI Reference](#-cli-reference) · [Security](SECURITY.md) · [Release](docs/OPEN_SOURCE_RELEASE.md)
 
