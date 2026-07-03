@@ -32,6 +32,7 @@ import (
 	"github.com/8bitlabs/clawdbot/pkg/perfbench"
 	"github.com/8bitlabs/clawdbot/pkg/phoenix"
 	"github.com/8bitlabs/clawdbot/pkg/providers"
+	skillsPkg "github.com/8bitlabs/clawdbot/pkg/skills"
 	"github.com/8bitlabs/clawdbot/pkg/solana"
 	"github.com/8bitlabs/clawdbot/pkg/trading"
 )
@@ -116,6 +117,7 @@ Public surfaces:
 		NewOnboardCommand(),
 		NewStatusCommand(),
 		NewCatalogCommand(),
+		NewSkillsCommand(),
 		NewLawsCommand(),
 		NewDoctorCommand(),
 		NewBenchCommand(),
@@ -479,6 +481,7 @@ func NewOnboardCommand() *cobra.Command {
 			fmt.Printf("  %sclawdbot agent -m \"Hello\"%s\n", colorGreen, colorReset)
 			fmt.Printf("  %sclawdbot ooda --interval 60%s\n", colorGreen, colorReset)
 			fmt.Printf("  %sclawdbot solana wallet%s\n", colorGreen, colorReset)
+			fmt.Printf("  %sclawdbot skills birth --install%s\n", colorGreen, colorReset)
 			return nil
 		},
 	}
@@ -687,6 +690,60 @@ trading endpoints.`,
 		},
 	})
 
+	return cmd
+}
+
+// ── Skills Command ───────────────────────────────────────────────────
+
+func NewSkillsCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "skills",
+		Short: "Manage ClawdBot birth skill seeds",
+	}
+	cmd.AddCommand(newSkillsBirthCommand())
+	return cmd
+}
+
+func newSkillsBirthCommand() *cobra.Command {
+	var (
+		jsonOut    bool
+		install    bool
+		timeoutSec int
+	)
+	cmd := &cobra.Command{
+		Use:   "birth",
+		Short: "Write or install the default skill packs every ClawdBot spawn should inherit",
+		Long: `Writes the birth skill manifest into the ClawdBot workspace and can install
+the default all-skills packs:
+  - https://github.com/Solizardking/skills --all
+  - https://github.com/samber/cc-skills-golang --all`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			manifest := skillsPkg.BuildBirthManifest(time.Now(), nil)
+			path, err := skillsPkg.WriteBirthManifest(config.DefaultWorkspacePath(), manifest)
+			if err != nil {
+				return err
+			}
+			if jsonOut {
+				if err := writeJSON(map[string]any{"manifestPath": path, "manifest": manifest}); err != nil {
+					return err
+				}
+			} else {
+				fmt.Println(skillsPkg.FormatBirthManifest(manifest))
+				fmt.Printf("manifest: %s\n", path)
+			}
+			if install {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
+				defer cancel()
+				if err := skillsPkg.InstallBirthSources(ctx, manifest.Sources, os.Stdout); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print JSON")
+	cmd.Flags().BoolVar(&install, "install", false, "Run npx skills add for each birth source")
+	cmd.Flags().IntVar(&timeoutSec, "timeout", 600, "Install timeout in seconds")
 	return cmd
 }
 

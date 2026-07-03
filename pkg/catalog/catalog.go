@@ -62,7 +62,11 @@ type AgentEntry struct {
 
 type ZKSurface struct {
 	Root             string   `json:"root"`
+	ManifestFile     string   `json:"manifestFile,omitempty"`
+	WorkspaceFile    string   `json:"workspaceFile,omitempty"`
+	LockFile         string   `json:"lockFile,omitempty"`
 	SkillFile        string   `json:"skillFile,omitempty"`
+	AgentManifest    string   `json:"agentManifest,omitempty"`
 	AgentPackageDir  string   `json:"agentPackageDir,omitempty"`
 	AgentPackageName string   `json:"agentPackageName,omitempty"`
 	AgentBinary      string   `json:"agentBinary,omitempty"`
@@ -195,9 +199,26 @@ func LoadZKSurface(root string) (ZKSurface, error) {
 		Operations: []string{"publish_attestation", "consume_attestation", "commit_encrypted_state", "verify_proof", "compute_nullifier"},
 	}
 
+	manifestFile := filepath.Join(root, "MANIFEST.json")
+	if fileExists(manifestFile) {
+		surface.ManifestFile = manifestFile
+	}
+	workspaceFile := filepath.Join(root, "pnpm-workspace.yaml")
+	if fileExists(workspaceFile) {
+		surface.WorkspaceFile = workspaceFile
+	}
+	lockFile := filepath.Join(root, "pnpm-lock.yaml")
+	if fileExists(lockFile) {
+		surface.LockFile = lockFile
+	}
+
 	skillFile := filepath.Join(root, "agent", "SKILL.md")
 	if fileExists(skillFile) {
 		surface.SkillFile = skillFile
+	}
+	agentManifest := filepath.Join(root, "agent", "agent.json")
+	if fileExists(agentManifest) {
+		surface.AgentManifest = agentManifest
 	}
 
 	agentDir := filepath.Join(root, "agent")

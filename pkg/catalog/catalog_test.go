@@ -78,8 +78,11 @@ func TestLoadZKSurface(t *testing.T) {
 	mkdirAll(t, filepath.Join(root, "docs"))
 
 	writeFile(t, filepath.Join(root, "agent", "SKILL.md"), "---\nname: clawd-zk-agent\n---\n")
+	writeFile(t, filepath.Join(root, "agent", "agent.json"), `{"identifier":"clawd-zk-agent"}`)
 	writeFile(t, filepath.Join(root, "agent", "package.json"), `{"name":"@clawd/zk-agent","bin":{"clawd-zk-agent":"./dist/cli.js"}}`)
 	writeFile(t, filepath.Join(root, "client", "package.json"), `{"name":"@clawd/zk-client"}`)
+	writeFile(t, filepath.Join(root, "MANIFEST.json"), `{"name":"Clawd ZK Primitives"}`)
+	writeFile(t, filepath.Join(root, "pnpm-workspace.yaml"), "packages:\n  - agent\n  - client\n")
 	writeFile(t, filepath.Join(root, "programs", "clawd-zk", "Cargo.toml"), "[package]\nname = \"clawd-zk\"\n")
 	writeFile(t, filepath.Join(root, "configs", "light-trees.yaml"), "trees: []\n")
 	writeFile(t, filepath.Join(root, "README.md"), "# ZK\n")
@@ -94,6 +97,9 @@ func TestLoadZKSurface(t *testing.T) {
 	}
 	if surface.ClientPackage != "@clawd/zk-client" || surface.ProgramName != "clawd-zk" {
 		t.Fatalf("unexpected zk package metadata: %#v", surface)
+	}
+	if surface.ManifestFile == "" || surface.AgentManifest == "" || surface.WorkspaceFile == "" {
+		t.Fatalf("expected manifest/workspace metadata: %#v", surface)
 	}
 	if len(surface.Operations) == 0 || len(surface.Docs) != 2 {
 		t.Fatalf("unexpected zk docs/ops: %#v", surface)

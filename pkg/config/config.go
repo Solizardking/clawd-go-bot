@@ -6,6 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	skillsPkg "github.com/8bitlabs/clawdbot/pkg/skills"
 )
 
 const (
@@ -387,6 +390,10 @@ func EnsureDefaults() error {
 		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
 			return fmt.Errorf("write %s: %w", name, err)
 		}
+	}
+
+	if _, err := skillsPkg.WriteBirthManifest(ws, skillsPkg.BuildBirthManifest(time.Now(), nil)); err != nil {
+		return fmt.Errorf("write birth skills manifest: %w", err)
 	}
 
 	return nil
