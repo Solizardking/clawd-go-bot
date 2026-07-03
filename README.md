@@ -172,6 +172,7 @@ Relevant knobs:
 CLAWDBOT_INSTALL_COMPLETE=1
 CLAWDBOT_INSTALL_CORE_AI=1
 CLAWDBOT_INSTALL_VULCAN=1
+# CLAWDBOT_INSTALL_VULCAN=0 # explicit opt-out for CI/constrained installs
 CLAWDBOT_CORE_AI_REPO=https://github.com/Solizardking/core-ai
 CLAWDBOT_CORE_AI_REF=clawd-stack-integration
 CLAWDBOT_CORE_AI_DIR=~/.clawdbot/core-ai
