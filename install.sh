@@ -171,6 +171,18 @@ write_core_ai_mcp_config() {
 JSONEOF
 }
 
+npm_install_and_build() {
+  local package_dir="$1"
+  local label="$2"
+
+  info "Building $label..."
+  if npm --prefix "$package_dir" install --legacy-peer-deps; then
+    npm --prefix "$package_dir" run build || warn "$label build failed"
+  else
+    warn "$label dependency install failed"
+  fi
+}
+
 install_core_ai() {
   info "Installing core-ai sidecar (${CORE_AI_REF})..."
 
@@ -185,14 +197,10 @@ install_core_ai() {
 
   if check_cmd npm; then
     if [[ -f "$CORE_AI_DIR/helius-mcp/package.json" ]]; then
-      info "Building core-ai helius-mcp..."
-      npm --prefix "$CORE_AI_DIR/helius-mcp" install || warn "helius-mcp dependency install failed"
-      npm --prefix "$CORE_AI_DIR/helius-mcp" run build || warn "helius-mcp build failed"
+      npm_install_and_build "$CORE_AI_DIR/helius-mcp" "core-ai helius-mcp"
     fi
     if [[ -f "$CORE_AI_DIR/mcp-server/package.json" ]]; then
-      info "Building core-ai pump MCP server..."
-      npm --prefix "$CORE_AI_DIR/mcp-server" install || warn "pump MCP dependency install failed"
-      npm --prefix "$CORE_AI_DIR/mcp-server" run build || warn "pump MCP build failed"
+      npm_install_and_build "$CORE_AI_DIR/mcp-server" "core-ai pump MCP server"
     fi
   else
     warn "npm not found; core-ai source was installed but MCP packages were not built"
