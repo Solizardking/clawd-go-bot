@@ -1027,51 +1027,7 @@ func NewSolanaCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		&cobra.Command{
-			Use:   "wallet",
-			Short: "Show wallet info and balance",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				cfg, err := config.Load()
-				if err != nil {
-					return fmt.Errorf("config error: %w", err)
-				}
-				fmt.Printf("%s💰 Solana Wallet%s\n", colorGreen, colorReset)
-				fmt.Printf("Pubkey:  %s\n", cfg.Solana.WalletPubkey)
-				fmt.Printf("RPC:     %s\n", truncate(cfg.Solana.HeliusRPCURL, 40))
-
-				if cfg.Solana.WalletPubkey != "" && cfg.Solana.HeliusAPIKey != "" {
-					timeout := cfg.Solana.HeliusTimeoutSeconds
-					if timeout <= 0 {
-						timeout = 20
-					}
-					retries := cfg.Solana.HeliusRetries
-					if retries <= 0 {
-						retries = 3
-					}
-
-					hc := solana.NewHeliusClientWithOptions(
-						cfg.Solana.HeliusAPIKey,
-						cfg.Solana.HeliusRPCURL,
-						cfg.Solana.HeliusWSSURL,
-						cfg.Solana.HeliusNetwork,
-						time.Duration(timeout*float64(time.Second)),
-						retries,
-						750*time.Millisecond,
-					)
-
-					balance, err := hc.GetBalance(cfg.Solana.WalletPubkey)
-					if err != nil {
-						fmt.Printf("%sBalance lookup failed:%s %v\n", colorRed, colorReset, err)
-					} else {
-						fmt.Printf("Balance: %s%.6f SOL%s (%d lamports)\n", colorTeal, balance.SOL, colorReset, balance.Lamports)
-					}
-				} else {
-					fmt.Printf("%sSet HELIUS_API_KEY and wallet_pubkey to fetch live balance.%s\n", colorDim, colorReset)
-				}
-
-				return nil
-			},
-		},
+		NewSolanaWalletCommand(),
 		&cobra.Command{
 			Use:   "research [mint]",
 			Short: "Deep research a Solana token via Birdeye",
@@ -1199,6 +1155,168 @@ func NewSolanaCommand() *cobra.Command {
 	)
 
 	return cmd
+}
+
+func NewSolanaWalletCommand() *cobra.Command {
+	var jsonOut bool
+
+	cmd := &cobra.Command{
+		Use:   "wallet",
+		Short: "Show wallet info and balance",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("config error: %w", err)
+			}
+			pubkey := strings.TrimSpace(cfg.Solana.WalletPubkey)
+			keyPath := strings.TrimSpace(cfg.Solana.WalletKeyPath)
+			if pubkey == "" && keyPath != "" {
+				if kp, err := walletPkg.Load(expandUserPath(keyPath)); err == nil {
+					pubkey = kp.Pubkey()
+				}
+			}
+
+			if jsonOut {
+				return writeJSON(map[string]any{
+					"pubkey":      pubkey,
+					"keypairPath": keyPath,
+					"rpc":         cfg.Solana.HeliusRPCURL,
+				})
+			}
+
+			fmt.Printf("%s💰 Solana Wallet%s\n", colorGreen, colorReset)
+			fmt.Printf("Pubkey:  %s\n", pubkey)
+			if keyPath != "" {
+				fmt.Printf("Keypair: %s\n", keyPath)
+			}
+			fmt.Printf("RPC:     %s\n", truncate(cfg.Solana.HeliusRPCURL, 40))
+
+			if pubkey != "" && cfg.Solana.HeliusAPIKey != "" {
+				timeout := cfg.Solana.HeliusTimeoutSeconds
+				if timeout <= 0 {
+					timeout = 20
+				}
+				retries := cfg.Solana.HeliusRetries
+				if retries <= 0 {
+					retries = 3
+				}
+
+				hc := solana.NewHeliusClientWithOptions(
+					cfg.Solana.HeliusAPIKey,
+					cfg.Solana.HeliusRPCURL,
+					cfg.Solana.HeliusWSSURL,
+					cfg.Solana.HeliusNetwork,
+					time.Duration(timeout*float64(time.Second)),
+					retries,
+					750*time.Millisecond,
+				)
+
+				balance, err := hc.GetBalance(pubkey)
+				if err != nil {
+					fmt.Printf("%sBalance lookup failed:%s %v\n", colorRed, colorReset, err)
+				} else {
+					fmt.Printf("Balance: %s%.6f SOL%s (%d lamports)\n", colorTeal, balance.SOL, colorReset, balance.Lamports)
+				}
+			} else {
+				fmt.Printf("%sSet HELIUS_API_KEY and wallet_pubkey to fetch live balance.%s\n", colorDim, colorReset)
+			}
+
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print JSON")
+
+	var (
+		out     string
+		force   bool
+		initJSON bool
+	)
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Generate or reuse the local agent wallet",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("config error: %w", err)
+			}
+			path := strings.TrimSpace(out)
+			if path == "" {
+				path = strings.TrimSpace(cfg.Solana.WalletKeyPath)
+			}
+			if path == "" {
+				path = defaultAgentWalletPath()
+			}
+			path = expandUserPath(path)
+
+			var kp *walletPkg.Keypair
+			created := false
+			if force {
+				kp, err = walletPkg.Generate()
+				if err != nil {
+					return err
+				}
+				if err := walletPkg.Save(path, kp, true); err != nil {
+					return err
+				}
+				created = true
+			} else {
+				kp, created, err = walletPkg.Ensure(path)
+				if err != nil {
+					return err
+				}
+			}
+
+			cfg.Solana.WalletPubkey = kp.Pubkey()
+			cfg.Solana.WalletKeyPath = path
+			if err := config.Save(cfg); err != nil {
+				return fmt.Errorf("save config: %w", err)
+			}
+
+			result := map[string]any{
+				"created":     created,
+				"pubkey":      kp.Pubkey(),
+				"keypairPath": path,
+				"configPath":  config.DefaultConfigPath(),
+			}
+			if initJSON {
+				return writeJSON(result)
+			}
+
+			if created {
+				fmt.Printf("%sAgent wallet generated%s\n", colorGreen, colorReset)
+			} else {
+				fmt.Printf("%sAgent wallet loaded%s\n", colorTeal, colorReset)
+			}
+			fmt.Printf("pubkey:  %s\n", kp.Pubkey())
+			fmt.Printf("keypair: %s\n", path)
+			fmt.Printf("config:  %s\n", config.DefaultConfigPath())
+			return nil
+		},
+	}
+	initCmd.Flags().StringVar(&out, "out", "", "Keypair path (default: workspace/agent-wallet.json)")
+	initCmd.Flags().BoolVar(&force, "force", false, "Overwrite any existing keypair")
+	initCmd.Flags().BoolVar(&initJSON, "json", false, "Print JSON")
+
+	cmd.AddCommand(initCmd)
+	return cmd
+}
+
+func defaultAgentWalletPath() string {
+	return filepath.Join(config.DefaultWorkspacePath(), "agent-wallet.json")
+}
+
+func expandUserPath(path string) string {
+	if path == "~" {
+		if home, err := os.UserHomeDir(); err == nil {
+			return home
+		}
+	}
+	if strings.HasPrefix(path, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, strings.TrimPrefix(path, "~/"))
+		}
+	}
+	return path
 }
 
 func NewSolanaDASCommand() *cobra.Command {
