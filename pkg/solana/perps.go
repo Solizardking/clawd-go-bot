@@ -15,17 +15,17 @@ import (
 // PerpsToken is one row of the perps token list: open interest split by side,
 // margin usage, and a directional bias readout.
 type PerpsToken struct {
-	Token          string  `json:"token"`
-	LongIO         float64 `json:"long_io"`
-	ShortIO        float64 `json:"short_io"`
-	OpenInterest   float64 `json:"open_interest"`
-	Margin         float64 `json:"margin"`
-	MarginUsed     float64 `json:"margin_used"`
-	EntryMargin    float64 `json:"entry_margin"`
-	UnrealizedPnL  float64 `json:"unrealized_pnl"`
-	Bias           float64 `json:"bias"`
-	Leverage       float64 `json:"leverage"`
-	BiasText       string  `json:"bias_text"`
+	Token         string  `json:"token"`
+	LongIO        float64 `json:"long_io"`
+	ShortIO       float64 `json:"short_io"`
+	OpenInterest  float64 `json:"open_interest"`
+	Margin        float64 `json:"margin"`
+	MarginUsed    float64 `json:"margin_used"`
+	EntryMargin   float64 `json:"entry_margin"`
+	UnrealizedPnL float64 `json:"unrealized_pnl"`
+	Bias          float64 `json:"bias"`
+	Leverage      float64 `json:"leverage"`
+	BiasText      string  `json:"bias_text"`
 }
 
 // GetPerpsTokenList returns the top perps tokens by open interest from the given

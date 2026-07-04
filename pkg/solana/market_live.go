@@ -13,19 +13,19 @@ import (
 
 // TrendingTokenLive mirrors the documented /defi/token_trending item shape.
 type TrendingTokenLive struct {
-	Address        string  `json:"address"`
-	Symbol         string  `json:"symbol"`
-	Name           string  `json:"name"`
-	Decimals       int     `json:"decimals"`
-	Price          float64 `json:"price"`
-	Change24h      float64 `json:"price24hChangePercent"`
-	Volume24hUSD   float64 `json:"volume24hUSD"`
-	VolumeChange   float64 `json:"volume24hChangePercent"`
-	Liquidity      float64 `json:"liquidity"`
-	MarketCap      float64 `json:"marketcap"`
-	FDV            float64 `json:"fdv"`
-	Rank           int     `json:"rank"`
-	LogoURI        string  `json:"logoURI"`
+	Address      string  `json:"address"`
+	Symbol       string  `json:"symbol"`
+	Name         string  `json:"name"`
+	Decimals     int     `json:"decimals"`
+	Price        float64 `json:"price"`
+	Change24h    float64 `json:"price24hChangePercent"`
+	Volume24hUSD float64 `json:"volume24hUSD"`
+	VolumeChange float64 `json:"volume24hChangePercent"`
+	Liquidity    float64 `json:"liquidity"`
+	MarketCap    float64 `json:"marketcap"`
+	FDV          float64 `json:"fdv"`
+	Rank         int     `json:"rank"`
+	LogoURI      string  `json:"logoURI"`
 }
 
 // GetTrendingLive returns trending Solana tokens with correctly-mapped fields.
