@@ -77,67 +77,41 @@ esac
 info "Platform: ${OS}/${ARCH}"
 
 # ── Check dependencies ────────────────────────────────────────────────────────
-check_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
+check_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 json_get() {
-  local json="$1"
-  local key="$2"
+  local json="$1" key="$2"
   printf '%s' "$json" | tr '\n' ' ' | sed -n "s/.*\"${key}\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -1
 }
 
 append_env_if_missing() {
-  local key="$1"
-  local value="$2"
+  local key="$1" value="$2"
   if [[ -n "$value" && -f "$ENV_FILE" ]] && ! grep -q "^${key}=" "$ENV_FILE"; then
     printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
   fi
 }
 
 github_archive_url() {
-  local repo_url="$1"
-  local ref="$2"
-  printf "%s/archive/%s.tar.gz" "${repo_url%.git}" "$ref"
+  printf "%s/archive/%s.tar.gz" "${1%.git}" "$2"
 }
 
 install_source_archive() {
-  local repo_url="$1"
-  local ref="$2"
-  local dest="$3"
-  local label="$4"
-  local tmp archive root
-
+  local repo_url="$1" ref="$2" dest="$3" label="$4" tmp archive root
   check_cmd curl || die "curl is required to install $label from an archive"
   check_cmd tar || die "tar is required to install $label from an archive"
-
   tmp="$(mktemp -d)"
   archive="$tmp/source.tar.gz"
   curl -fsSL "$(github_archive_url "$repo_url" "$ref")" -o "$archive"
   tar -xzf "$archive" -C "$tmp"
   root="$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -1)"
-  if [[ -z "$root" ]]; then
-    rm -rf "$tmp"
-    die "Could not unpack $label archive"
-  fi
-
-  rm -rf "$dest"
-  mkdir -p "$(dirname "$dest")"
-  mv "$root" "$dest"
-  rm -rf "$tmp"
+  [[ -n "$root" ]] || { rm -rf "$tmp"; die "Could not unpack $label archive"; }
+  rm -rf "$dest"; mkdir -p "$(dirname "$dest")"; mv "$root" "$dest"; rm -rf "$tmp"
 }
 
 install_source_git() {
-  local repo_url="$1"
-  local ref="$2"
-  local dest="$3"
-  local label="$4"
-  local tmp repo
-
+  local repo_url="$1" ref="$2" dest="$3" label="$4" tmp repo
   check_cmd git || die "git is required to install $label from git"
-
-  tmp="$(mktemp -d)"
-  repo="$tmp/repo"
+  tmp="$(mktemp -d)"; repo="$tmp/repo"
   if ! git clone --depth=1 --branch "$ref" --quiet "$repo_url" "$repo" 2>/dev/null; then
     rm -rf "$repo"
     git clone --depth=1 --quiet "$repo_url" "$repo"
@@ -146,24 +120,25 @@ install_source_git() {
       git -C "$repo" checkout --quiet FETCH_HEAD
     fi
   fi
-
-  rm -rf "$dest"
-  mkdir -p "$(dirname "$dest")"
-  mv "$repo" "$dest"
-  rm -rf "$tmp"
+  rm -rf "$dest"; mkdir -p "$(dirname "$dest")"; mv "$repo" "$dest"; rm -rf "$tmp"
 }
 
 ensure_go_source() {
-  if [[ -f "$REPO_DIR/go.mod" && -d "$REPO_DIR/cmd/clawdbot" ]]; then
-    return
-  fi
-
-  warn "Source archive is missing Go CLI sources; retrying with git checkout"
+  if [[ -f "$REPO_DIR/go.mod" && -d "$REPO_DIR/cmd/clawdbot" ]]; then return; fi
+  warn "Source archive missing Go CLI sources; retrying with git checkout"
   install_source_git "$REPO" "$REF" "$REPO_DIR" "clawdbot-go"
-
   if [[ ! -f "$REPO_DIR/go.mod" || ! -d "$REPO_DIR/cmd/clawdbot" ]]; then
-    die "Downloaded source is incomplete: expected go.mod and cmd/clawdbot/"
+    die "Downloaded source incomplete: expected go.mod and cmd/clawdbot/"
   fi
+}
+
+# ── Build from source (must be defined before use) ──────────────────────────
+build_from_source() {
+  info "Building clawdbot binary from Go source..."
+  cd "$REPO_DIR"
+  go mod download -x 2>/dev/null | tail -3 || true
+  go build -buildvcs=false -trimpath -ldflags="-s -w" -o "$INSTALL_DIR/bin/clawdbot" ./cmd/clawdbot/
+  success "Binary built: $INSTALL_DIR/bin/clawdbot"
 }
 
 write_core_ai_mcp_config() {
@@ -197,9 +172,7 @@ JSONEOF
 }
 
 npm_install_and_build() {
-  local package_dir="$1"
-  local label="$2"
-
+  local package_dir="$1" label="$2"
   info "Building $label..."
   if npm --prefix "$package_dir" install --legacy-peer-deps; then
     npm --prefix "$package_dir" run build || warn "$label build failed"
@@ -210,7 +183,6 @@ npm_install_and_build() {
 
 install_core_ai() {
   info "Installing core-ai sidecar (${CORE_AI_REF})..."
-
   if [[ -d "$CORE_AI_DIR/.git" ]]; then
     git -C "$CORE_AI_DIR" fetch --depth=1 origin "$CORE_AI_REF" --quiet || warn "core-ai fetch failed"
     git -C "$CORE_AI_DIR" checkout --quiet -B "$CORE_AI_REF" "origin/$CORE_AI_REF" || warn "core-ai checkout failed"
@@ -219,68 +191,42 @@ install_core_ai() {
   else
     install_source_git "$CORE_AI_REPO" "$CORE_AI_REF" "$CORE_AI_DIR" "core-ai"
   fi
-
   if check_cmd npm; then
-    if [[ -f "$CORE_AI_DIR/helius-mcp/package.json" ]]; then
-      npm_install_and_build "$CORE_AI_DIR/helius-mcp" "core-ai helius-mcp"
-    fi
-    if [[ -f "$CORE_AI_DIR/mcp-server/package.json" ]]; then
-      npm_install_and_build "$CORE_AI_DIR/mcp-server" "core-ai pump MCP server"
-    fi
+    [[ -f "$CORE_AI_DIR/helius-mcp/package.json" ]] && npm_install_and_build "$CORE_AI_DIR/helius-mcp" "core-ai helius-mcp"
+    [[ -f "$CORE_AI_DIR/mcp-server/package.json" ]] && npm_install_and_build "$CORE_AI_DIR/mcp-server" "core-ai pump MCP server"
   else
     warn "npm not found; core-ai source was installed but MCP packages were not built"
   fi
-
   write_core_ai_mcp_config
   success "core-ai sidecar ready at $CORE_AI_DIR"
-  success "MCP config written to $CORE_AI_MCP_CONFIG"
 }
 
 install_vulcan() {
-  if [[ "$INSTALL_VULCAN" == "0" ]]; then
-    warn "Skipping Vulcan install (CLAWDBOT_INSTALL_VULCAN=0)"
-    return
-  fi
-  if check_cmd vulcan; then
-    success "Vulcan: $(command -v vulcan)"
-    return
-  fi
-  if ! check_cmd curl; then
-    warn "curl not found; skipping Vulcan install"
-    return
-  fi
+  if [[ "$INSTALL_VULCAN" == "0" ]]; then warn "Skipping Vulcan install (CLAWDBOT_INSTALL_VULCAN=0)"; return; fi
+  if check_cmd vulcan; then success "Vulcan: $(command -v vulcan)"; return; fi
+  check_cmd curl || { warn "curl not found; skipping Vulcan install"; return; }
   info "Installing Vulcan CLI for Phoenix paper/live perps..."
-  curl -fsSL https://github.com/Ellipsis-Labs/vulcan-cli/releases/latest/download/install.sh | sh || warn "Vulcan install failed; run clawdbot perps health after installing vulcan"
-  if check_cmd vulcan; then
-    success "Vulcan: $(command -v vulcan)"
-  else
-    warn "Vulcan was not found on PATH after install; ensure ~/.local/bin is on PATH"
-  fi
+  curl -fsSL https://github.com/Ellipsis-Labs/vulcan-cli/releases/latest/download/install.sh | sh || warn "Vulcan install failed"
+  check_cmd vulcan && success "Vulcan: $(command -v vulcan)" || warn "Vulcan not found on PATH after install"
 }
 
+# ── Ensure Go ─────────────────────────────────────────────────────────────────
 if ! check_cmd go; then
-  echo
   warn "Go not found. Installing Go 1.22..."
   if [[ "$OS" == "darwin" ]]; then
-    if check_cmd brew; then
-      brew install go
-    else
-      die "Install Go from https://go.dev/dl/ then re-run this script"
-    fi
+    check_cmd brew && brew install go || die "Install Go from https://go.dev/dl/ then re-run"
   elif [[ "$OS" == "linux" ]]; then
     GOTAR="go1.22.5.linux-${ARCH}.tar.gz"
     curl -fsSL "https://go.dev/dl/${GOTAR}" -o "/tmp/${GOTAR}"
     sudo tar -C /usr/local -xzf "/tmp/${GOTAR}"
     export PATH="$PATH:/usr/local/go/bin"
   else
-    die "Install Go from https://go.dev/dl/ then re-run this script"
+    die "Install Go from https://go.dev/dl/ then re-run"
   fi
 fi
-
 GO_VERSION="$(go version 2>&1 | awk '{print $3}')"
 success "Go: ${GO_VERSION}"
 
-# ── Check git ─────────────────────────────────────────────────────────────────
 check_cmd git || die "git is required. Install it and re-run."
 
 # ── Fetch source ──────────────────────────────────────────────────────────────
@@ -300,13 +246,21 @@ fi
 ensure_go_source
 success "Source ready at $REPO_DIR"
 
-# ── Build ──────────────────────────────────────────────────────────────────────
-info "Building clawdbot binary..."
+# ── Try pre-built binary first, fall back to Go build ────────────────────────
 mkdir -p "$INSTALL_DIR/bin"
-cd "$REPO_DIR"
-go mod download -x 2>/dev/null | tail -3 || true
-go build -buildvcs=false -trimpath -ldflags="-s -w" -o "$INSTALL_DIR/bin/clawdbot" ./cmd/clawdbot/
-success "Binary built: $INSTALL_DIR/bin/clawdbot"
+PREBUILT_BINARY="$REPO_DIR/clawdbot"
+if [[ -f "$PREBUILT_BINARY" && -x "$PREBUILT_BINARY" ]]; then
+  if "$PREBUILT_BINARY" version >/dev/null 2>&1; then
+    info "Using pre-built binary from source archive..."
+    cp "$PREBUILT_BINARY" "$INSTALL_DIR/bin/clawdbot"
+    success "Binary copied: $INSTALL_DIR/bin/clawdbot"
+  else
+    warn "Pre-built binary found but not functional; building from source..."
+    build_from_source
+  fi
+else
+  build_from_source
+fi
 
 # ── Install to PATH ────────────────────────────────────────────────────────────
 mkdir -p "$BIN_DIR"
@@ -327,37 +281,28 @@ fi
 # ── Agent wallet for startup funding ──────────────────────────────────────────
 AGENT_DNA_ID=""
 if "$INSTALL_DIR/bin/clawdbot" dna --help >/dev/null 2>&1; then
-  DNA_JSON="$(CLAWDBOT_HOME="$INSTALL_DIR" "$INSTALL_DIR/bin/clawdbot" dna show \
-    --out "$INSTALL_DIR/workspace/agent-dna.json" \
-    --json 2>/dev/null || echo '{}')"
+  DNA_JSON="$(CLAWDBOT_HOME="$INSTALL_DIR" "$INSTALL_DIR/bin/clawdbot" dna show --out "$INSTALL_DIR/workspace/agent-dna.json" --json 2>/dev/null || echo '{}')"
   AGENT_DNA_ID="$(json_get "$DNA_JSON" "dnaId")"
 fi
 
 AGENT_WALLET_PUBKEY=""
 if "$INSTALL_DIR/bin/clawdbot" solana wallet init --help >/dev/null 2>&1; then
   info "Initializing local agent wallet..."
-  WALLET_JSON="$(CLAWDBOT_HOME="$INSTALL_DIR" "$INSTALL_DIR/bin/clawdbot" solana wallet init \
-    --out "$AGENT_WALLET_PATH" \
-    --json 2>/dev/null || echo '{}')"
+  WALLET_JSON="$(CLAWDBOT_HOME="$INSTALL_DIR" "$INSTALL_DIR/bin/clawdbot" solana wallet init --out "$AGENT_WALLET_PATH" --json 2>/dev/null || echo '{}')"
   AGENT_WALLET_PUBKEY="$(json_get "$WALLET_JSON" "pubkey")"
-  if [[ -n "$AGENT_WALLET_PUBKEY" ]]; then
-    success "Agent wallet: ${AGENT_WALLET_PUBKEY}"
-  else
-    warn "Agent wallet initialization did not return a public key"
-  fi
+  [[ -n "$AGENT_WALLET_PUBKEY" ]] && success "Agent wallet: ${AGENT_WALLET_PUBKEY}" || warn "Agent wallet init did not return a public key"
 else
-  warn "Installed clawdbot binary does not expose solana wallet init; startup funding will be skipped"
+  warn "Installed clawdbot binary does not expose solana wallet init"
 fi
 
 install_vulcan
 
-# Add to PATH if needed
+# ── Add to PATH if needed ────────────────────────────────────────────────────
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
   SHELL_RC=""
-  if [[ -f "$HOME/.zshrc" ]]; then SHELL_RC="$HOME/.zshrc"
-  elif [[ -f "$HOME/.bashrc" ]]; then SHELL_RC="$HOME/.bashrc"
-  elif [[ -f "$HOME/.profile" ]]; then SHELL_RC="$HOME/.profile"
-  fi
+  [[ -f "$HOME/.zshrc" ]] && SHELL_RC="$HOME/.zshrc"
+  [[ -f "$HOME/.bashrc" ]] && SHELL_RC="$HOME/.bashrc"
+  [[ -f "$HOME/.profile" ]] && SHELL_RC="$HOME/.profile"
   if [[ -n "$SHELL_RC" ]]; then
     echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$SHELL_RC"
     warn "Added $BIN_DIR to PATH in $SHELL_RC — restart your shell or run: export PATH=\"\$PATH:$BIN_DIR\""
@@ -366,19 +311,13 @@ fi
 
 # ── Register install & get ID ─────────────────────────────────────────────────
 info "Registering install with clawdrouter..."
-INSTALL_ID=""
-FUNDING_STATUS="requested"
-SOL_FUNDING_SIGNATURE=""
-CLAWD_FUNDING_SIGNATURE=""
-ZKROUTER_KEY=""
+INSTALL_ID=""; FUNDING_STATUS="requested"; SOL_FUNDING_SIGNATURE=""; CLAWD_FUNDING_SIGNATURE=""; ZKROUTER_KEY=""
 if check_cmd curl; then
   SOURCE_VERSION="$(cd "$REPO_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "$REF")"
   INSTALL_PAYLOAD="$(printf '{"os":"%s","arch":"%s","version":"%s","installComplete":"%s","coreAi":"%s","vulcan":"%s","agentWalletPubkey":"%s","agentDnaId":"%s","funding":{"solLamports":%s,"clawdTokens":%s,"clawdMint":"%s","createClawdAta":true}}' \
     "$OS" "$ARCH" "$SOURCE_VERSION" "$INSTALL_COMPLETE" "$INSTALL_CORE_AI" "$INSTALL_VULCAN" \
     "$AGENT_WALLET_PUBKEY" "$AGENT_DNA_ID" "$STARTUP_SOL_LAMPORTS" "$STARTUP_CLAWD_TOKENS" "$CLAWD_MINT")"
-  INSTALL_RESP="$(curl -sf -X POST "$INSTALL_API" \
-    -H "Content-Type: application/json" \
-    -d "$INSTALL_PAYLOAD" 2>/dev/null || echo '{}')"
+  INSTALL_RESP="$(curl -sf -X POST "$INSTALL_API" -H "Content-Type: application/json" -d "$INSTALL_PAYLOAD" 2>/dev/null || echo '{}')"
   INSTALL_ID="$(json_get "$INSTALL_RESP" "installId")"
   ZKROUTER_KEY="$(json_get "$INSTALL_RESP" "zkrouterKey")"
   RESP_ZKROUTER_BASE="$(json_get "$INSTALL_RESP" "zkrouterBase")"
@@ -386,49 +325,29 @@ if check_cmd curl; then
   RESP_FUNDING_STATUS="$(json_get "$INSTALL_RESP" "fundingStatus")"
   SOL_FUNDING_SIGNATURE="$(json_get "$INSTALL_RESP" "solSignature")"
   CLAWD_FUNDING_SIGNATURE="$(json_get "$INSTALL_RESP" "clawdSignature")"
-  if [[ -n "$RESP_ZKROUTER_BASE" ]]; then ZKROUTER_BASE="$RESP_ZKROUTER_BASE"; fi
-  if [[ -n "$RESP_RPC_URL" ]]; then RPC_URL="$RESP_RPC_URL"; fi
-  if [[ -n "$RESP_FUNDING_STATUS" ]]; then FUNDING_STATUS="$RESP_FUNDING_STATUS"; fi
+  [[ -n "$RESP_ZKROUTER_BASE" ]] && ZKROUTER_BASE="$RESP_ZKROUTER_BASE"
+  [[ -n "$RESP_RPC_URL" ]] && RPC_URL="$RESP_RPC_URL"
+  [[ -n "$RESP_FUNDING_STATUS" ]] && FUNDING_STATUS="$RESP_FUNDING_STATUS"
 fi
-
-if [[ -z "$INSTALL_ID" ]]; then
-  INSTALL_ID="local-$(date +%s)"
-  warn "Could not reach install API — using local ID"
-fi
-
+[[ -z "$INSTALL_ID" ]] && INSTALL_ID="local-$(date +%s)" && warn "Could not reach install API — using local ID"
 success "Install ID: ${INSTALL_ID}"
-if [[ -n "$SOL_FUNDING_SIGNATURE" || -n "$CLAWD_FUNDING_SIGNATURE" ]]; then
-  success "Startup funding receipts captured"
-elif [[ -n "$AGENT_WALLET_PUBKEY" ]]; then
-  info "Startup funding status: ${FUNDING_STATUS}"
-fi
+[[ -n "$SOL_FUNDING_SIGNATURE$CLAWD_FUNDING_SIGNATURE" ]] && success "Startup funding receipts captured" || [[ -n "$AGENT_WALLET_PUBKEY" ]] && info "Startup funding status: ${FUNDING_STATUS}"
 
 # ── Optional local treasury funding ───────────────────────────────────────────
 if [[ -n "$AGENT_WALLET_PUBKEY" && "${CLAWDBOT_LOCAL_STARTUP_FUNDING:-0}" == "1" ]]; then
   info "Running local treasury startup funding plan..."
-  FUND_ARGS=(
-    "solana" "fund-agent" "$AGENT_WALLET_PUBKEY"
-    "--json"
+  FUND_ARGS=("solana" "fund-agent" "$AGENT_WALLET_PUBKEY" "--json"
     "--sol-lamports" "$STARTUP_SOL_LAMPORTS"
-    "--clawd" "$STARTUP_CLAWD_TOKENS"
-    "--clawd-mint" "$CLAWD_MINT"
-    "--ledger" "$INSTALL_DIR/workspace/install-funding.jsonl"
-  )
-  if [[ "${CLAWDBOT_BIRTH_FUNDING_SEND:-0}" == "1" ]]; then
-    FUND_ARGS+=("--send")
-  fi
+    "--clawd" "$STARTUP_CLAWD_TOKENS" "--clawd-mint" "$CLAWD_MINT"
+    "--ledger" "$INSTALL_DIR/workspace/install-funding.jsonl")
+  [[ "${CLAWDBOT_BIRTH_FUNDING_SEND:-0}" == "1" ]] && FUND_ARGS+=("--send")
   LOCAL_FUNDING_JSON="$(CLAWDBOT_HOME="$INSTALL_DIR" CLAWDBOT_INSTALL_ID="$INSTALL_ID" "$INSTALL_DIR/bin/clawdbot" "${FUND_ARGS[@]}" 2>/dev/null || echo '{}')"
   LOCAL_FUNDING_STATUS="$(json_get "$LOCAL_FUNDING_JSON" "status")"
-  LOCAL_SOL_SIGNATURE="$(json_get "$LOCAL_FUNDING_JSON" "solSignature")"
-  LOCAL_CLAWD_SIGNATURE="$(json_get "$LOCAL_FUNDING_JSON" "clawdSignature")"
-  if [[ -n "$LOCAL_FUNDING_STATUS" ]]; then
-    FUNDING_STATUS="local_${LOCAL_FUNDING_STATUS}"
-    info "Local startup funding status: ${FUNDING_STATUS}"
-  else
-    warn "Local startup funding did not return a status"
-  fi
-  if [[ -n "$LOCAL_SOL_SIGNATURE" ]]; then SOL_FUNDING_SIGNATURE="$LOCAL_SOL_SIGNATURE"; fi
-  if [[ -n "$LOCAL_CLAWD_SIGNATURE" ]]; then CLAWD_FUNDING_SIGNATURE="$LOCAL_CLAWD_SIGNATURE"; fi
+  LOCAL_SOL_SIG="$(json_get "$LOCAL_FUNDING_JSON" "solSignature")"
+  LOCAL_CLAWD_SIG="$(json_get "$LOCAL_FUNDING_JSON" "clawdSignature")"
+  [[ -n "$LOCAL_FUNDING_STATUS" ]] && FUNDING_STATUS="local_${LOCAL_FUNDING_STATUS}" && info "Local startup funding: ${FUNDING_STATUS}"
+  [[ -n "$LOCAL_SOL_SIG" ]] && SOL_FUNDING_SIGNATURE="$LOCAL_SOL_SIG"
+  [[ -n "$LOCAL_CLAWD_SIG" ]] && CLAWD_FUNDING_SIGNATURE="$LOCAL_CLAWD_SIG"
 fi
 
 # ── Local install receipt ─────────────────────────────────────────────────────
@@ -470,7 +389,6 @@ CLAWDBOT_AGENT_DNA_ID=${AGENT_DNA_ID}
 CLAWDBOT_INSTALL_RECEIPT=${INSTALL_TRACK_FILE}
 
 # ── Free AI via zk.x402.wtf / zkrouter (no key needed) ───────────
-# Public gateway backed by the sovereign \$CLAWD router
 ZKROUTER_BASE_URL=${ZKROUTER_BASE}
 ZKROUTER_API_KEY=${ZKROUTER_KEY:-clawdbot-free}
 
@@ -493,7 +411,6 @@ AGENT_WALLET_PUBLIC_KEY=${AGENT_WALLET_PUBKEY}
 AGENT_WALLET_KEYPAIR=${AGENT_WALLET_PATH}
 SOLANA_WALLET_PUBKEY=${AGENT_WALLET_PUBKEY}
 SOLANA_WALLET_KEYPAIR=${AGENT_WALLET_PATH}
-# WALLET_PRIVATE_KEY=your-base58-private-key
 
 # ── Startup funding request / receipts ───────────────────────────
 CLAWD_TOKEN_MINT=${CLAWD_MINT}
@@ -505,17 +422,12 @@ CLAWDBOT_CLAWD_FUNDING_SIGNATURE=${CLAWD_FUNDING_SIGNATURE}
 # CLAWDBOT_LOCAL_STARTUP_FUNDING=1
 # CLAWDBOT_BIRTH_FUNDING_SEND=1
 # CLAWDBOT_TREASURY_KEYPAIR=~/.config/solana/id.json
-# CLAWDBOT_TREASURY_PRIVATE_KEY=base58-secret-key
-
-# ── Optional channels ─────────────────────────────────────────────
-# TELEGRAM_BOT_TOKEN=your-telegram-token
 
 # ── Optional core-ai sidecar ──────────────────────────────────────
-# Complete install: curl -fsSL https://raw.githubusercontent.com/Solizardking/clawdbot-go/main/install.sh | CLAWDBOT_INSTALL_COMPLETE=1 bash
+# Complete install: curl ... | CLAWDBOT_INSTALL_COMPLETE=1 bash
 # CLAWDBOT_INSTALL_CORE_AI=${INSTALL_CORE_AI}
 # CLAWDBOT_INSTALL_VULCAN=${INSTALL_VULCAN}
 # CLAWDBOT_CORE_AI_DIR=${CORE_AI_DIR}
-# CLAWDBOT_CORE_AI_REF=${CORE_AI_REF}
 # CLAWDBOT_CORE_AI_MCP_CONFIG=${CORE_AI_MCP_CONFIG}
 ENVEOF
   success ".env written to $ENV_FILE"
@@ -532,12 +444,6 @@ append_env_if_missing "SOLANA_WALLET_KEYPAIR" "$AGENT_WALLET_PATH"
 append_env_if_missing "CLAWDBOT_SKILLS_DIR" "$LOCAL_SKILLS_DIR"
 append_env_if_missing "CLAWDBOT_AGENTS_DIR" "$LOCAL_AGENTS_DIR"
 append_env_if_missing "CLAWDBOT_ZK_PRIMITIVES_DIR" "$LOCAL_ZK_PRIMITIVES_DIR"
-append_env_if_missing "CLAWD_TOKEN_MINT" "$CLAWD_MINT"
-append_env_if_missing "CLAWDBOT_STARTUP_SOL_LAMPORTS" "$STARTUP_SOL_LAMPORTS"
-append_env_if_missing "CLAWDBOT_STARTUP_CLAWD_TOKENS" "$STARTUP_CLAWD_TOKENS"
-append_env_if_missing "CLAWDBOT_INSTALL_FUNDING_STATUS" "$FUNDING_STATUS"
-append_env_if_missing "CLAWDBOT_SOL_FUNDING_SIGNATURE" "$SOL_FUNDING_SIGNATURE"
-append_env_if_missing "CLAWDBOT_CLAWD_FUNDING_SIGNATURE" "$CLAWD_FUNDING_SIGNATURE"
 
 # Symlink config into home
 if [[ ! -L "$HOME/.clawdbot" && "$INSTALL_DIR" != "$HOME/.clawdbot" ]]; then
@@ -565,14 +471,12 @@ fi
 if [[ "${CLAWDBOT_SKIP_SKILL_SEED:-0}" != "1" ]]; then
   if check_cmd npx; then
     info "Seeding birth skills from Solizardking/skills..."
-    npx skills add https://github.com/Solizardking/skills --all || warn "Solizardking skill seed failed; run: npx skills add https://github.com/Solizardking/skills --all"
+    npx skills add https://github.com/Solizardking/skills --all 2>/dev/null || warn "Solizardking skill seed failed"
     info "Seeding Go runtime skills from samber/cc-skills-golang..."
-    npx skills add https://github.com/samber/cc-skills-golang --all || warn "Go skill seed failed; run: npx skills add https://github.com/samber/cc-skills-golang --all"
+    npx skills add https://github.com/samber/cc-skills-golang --all 2>/dev/null || warn "Go skill seed failed"
   else
     warn "npx not found; skipping birth skill seed"
   fi
-else
-  warn "Skipping birth skill seed (CLAWDBOT_SKIP_SKILL_SEED=1)"
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
@@ -584,29 +488,19 @@ echo
 echo -e "  ${BOLD}Get started:${RESET}"
 echo -e "  ${CYAN}source ${ENV_FILE}${RESET}          # load env vars"
 echo -e "  ${CYAN}clawdbot version${RESET}             # verify install"
-if "$INSTALL_DIR/bin/clawdbot" dna --help >/dev/null 2>&1; then
-echo -e "  ${CYAN}clawdbot dna show${RESET}           # inspect starter agent DNA"
-fi
-echo -e "  ${CYAN}clawdbot agent${RESET}               # start AI REPL (free via zkrouter)"
+echo -e "  ${CYAN}clawdbot dna show${RESET}            # inspect starter DNA"
+echo -e "  ${CYAN}clawdbot agent${RESET}               # AI REPL (free via zkrouter)"
 echo -e "  ${CYAN}clawdbot ooda --sim${RESET}          # paper trading mode"
-echo -e "  ${CYAN}clawdbot skills birth --install${RESET} # reseed birth skills"
+echo -e "  ${CYAN}clawdbot skills birth --install${RESET} # reseed skills"
 echo -e "  ${CYAN}clawdbot solana trending${RESET}     # top Solana tokens"
-if [[ "$INSTALL_CORE_AI" == "1" ]]; then
-echo -e "  ${CYAN}${CORE_AI_MCP_CONFIG}${RESET}  # core-ai MCP config"
-else
-echo -e "  ${CYAN}CLAWDBOT_INSTALL_CORE_AI=1 ...${RESET} # optional core-ai MCP sidecar"
-fi
+echo -e "  ${CYAN}clawdbot web${RESET}                 # web console (port 18800)"
+[[ "$INSTALL_CORE_AI" == "1" ]] && echo -e "  ${CYAN}${CORE_AI_MCP_CONFIG}${RESET}  # core-ai MCP config"
 echo
 echo -e "  ${BOLD}Edit your config:${RESET}  ${CYAN}nano ${ENV_FILE}${RESET}"
-if [[ -n "$AGENT_WALLET_PUBKEY" ]]; then
-echo -e "  ${BOLD}Agent wallet:${RESET}     ${CYAN}${AGENT_WALLET_PUBKEY}${RESET}"
-fi
-echo -e "  ${BOLD}Install receipt:${RESET}  ${CYAN}${INSTALL_TRACK_FILE}${RESET}"
-echo -e "  ${BOLD}Funding status:${RESET}   ${CYAN}${FUNDING_STATUS}${RESET}"
+[[ -n "$AGENT_WALLET_PUBKEY" ]] && echo -e "  ${BOLD}Agent wallet:${RESET}     ${CYAN}${AGENT_WALLET_PUBKEY}${RESET}"
 echo -e "  ${BOLD}Runtime repo:${RESET}      ${CYAN}${REPO}${RESET}"
 echo -e "  ${BOLD}Ecosystem hub:${RESET}    ${CYAN}${HUB_REPO}${RESET}"
 echo -e "  ${BOLD}Gateway:${RESET}          ${CYAN}https://zk.x402.wtf${RESET}"
 echo -e "  ${BOLD}Terminal:${RESET}         ${CYAN}${TERMINAL_URL}${RESET}"
 echo
 echo -e "  🦞 \$CLAWD :: Droids Lead The Way"
-echo
