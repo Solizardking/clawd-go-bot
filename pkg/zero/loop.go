@@ -100,6 +100,8 @@ func (e *Engine) Run(ctx context.Context, prompt string) (*Result, error) {
 	turns := 0
 	inTok, outTok := 0, 0
 
+	winners := map[string]bool{}
+
 	root := &task{id: nextID, parentID: -1, depth: 0, prompt: prompt, state: taskReady}
 	root.messages = []providers.Message{
 		{Role: "system", Content: e.cfg.SystemPrompt},
@@ -127,13 +129,7 @@ func (e *Engine) Run(ctx context.Context, prompt string) (*Result, error) {
 		}
 		turns++
 
-		resp, err := e.cfg.Provider.Chat(ctx, providers.ChatOptions{
-			Model:       e.cfg.Model,
-			Messages:    t.messages,
-			MaxTokens:   e.cfg.MaxTokens,
-			Temperature: e.cfg.Temperature,
-			Tools:       e.toolDefs(t.depth),
-		})
+		resp, winner, err := e.chatTurn(ctx, t.messages, e.toolDefs(t.depth))
 		if err != nil {
 			t.state = taskFailed
 			t.result = fmt.Sprintf("provider error: %v", err)
