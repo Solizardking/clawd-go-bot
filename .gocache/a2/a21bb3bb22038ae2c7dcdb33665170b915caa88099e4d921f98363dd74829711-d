@@ -1,0 +1,6 @@
+./client.go
+./futures.go
+./market.go
+./tools.go
+./trader.go
+./types.go

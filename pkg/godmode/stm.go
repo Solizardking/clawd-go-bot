@@ -92,7 +92,9 @@ func (c *Cleaner) Normalize(input string) (string, []string, bool) {
 
 	before = text
 	for _, pair := range casualPairs {
-		text = pair.from.ReplaceAllString(text, pair.to)
+		text = pair.from.ReplaceAllStringFunc(text, func(match string) string {
+			return matchCase(match, pair.to)
+		})
 	}
 	if text != before {
 		applied = append(applied, "casual_mode")
@@ -128,4 +130,16 @@ func capitalizeFirst(text string) string {
 		}
 	}
 	return text
+}
+
+func matchCase(match, replacement string) string {
+	for _, r := range match {
+		if unicode.IsLetter(r) {
+			if unicode.IsUpper(r) {
+				return replacement
+			}
+			return strings.ToLower(replacement[:1]) + replacement[1:]
+		}
+	}
+	return replacement
 }

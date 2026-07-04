@@ -1,0 +1,12 @@
+# test log
+getenv GOTMPDIR
+getenv TMPDIR
+getenv GOTMPDIR
+getenv TMPDIR
+open /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T
+stat /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestWriteFileSafeRejectsSiblingPrefixEscape812768081/001/workspace
+stat /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestWriteFileSafeRejectsSiblingPrefixEscape812768081/001
+stat /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestWriteFileSafeRejectsSiblingPrefixEscape812768081/001/workspace-evil
+stat /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestWriteFileSafeRejectsSiblingPrefixEscape812768081/001
+stat /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestWriteFileSafeRejectsSiblingPrefixEscape812768081/001/workspace-evil/owned.txt
+open /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T
