@@ -385,6 +385,78 @@ func main() {
 		json.NewEncoder(w).Encode(resp)
 	})
 
+	// API: Footprint + Weissman score — live source size vs the 2.0 MB budget,
+	// with gzip-vs-zstd compression ratios and a Weissman score (Pied Piper).
+	mux.HandleFunc("/api/size", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		report, err := weissman.Run(projectRoot)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(report)
+	})
+
+	// API: Universal computer — steps Conway's Game of Life (Turing-complete) and
+	// returns the current frame. ?reset=1 reseeds a Gosper glider gun.
+	mux.HandleFunc("/api/life", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		lifeMu.Lock()
+		defer lifeMu.Unlock()
+		if lifeGrid == nil || strings.TrimSpace(r.URL.Query().Get("reset")) != "" {
+			lifeGrid = gameoflife.New(40, 70)
+			lifeGrid.SeedGosperGun(1, 1)
+			lifeGrid.SeedGlider(28, 40)
+		} else {
+			lifeGrid.Step()
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"rows":       lifeGrid.Rows,
+			"cols":       lifeGrid.Cols,
+			"gen":        lifeGrid.Gen,
+			"population": lifeGrid.Population(),
+			"cells":      lifeGrid.Cells,
+			"note":       "Conway's Game of Life — a universal Turing computer (Conway 1982)",
+		})
+	})
+
+	// API: Middle-out runtime — realtime compressing content cache stats plus a
+	// live demo Ralph loop that converges toward a goal string.
+	mux.HandleFunc("/api/middleout", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Exercise the cache with the live source so stats are non-trivial.
+		if corpus, files, err := weissman.ScanSource(projectRoot); err == nil && files > 0 {
+			sharedCache.PutContent(corpus)
+		}
+		json.NewEncoder(w).Encode(map[string]any{
+			"cache": sharedCache.Stats(),
+			"note":  "zstd content cache — compress + dedupe + LRU in realtime",
+		})
+	})
+
+	// API: Strategy optimizer — walk-forward search over the demo series, showing
+	// the best params with in-sample and out-of-sample scores (overfit exposure).
+	mux.HandleFunc("/api/trading/optimize", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, _ := loadRuntimeConfig(absPath)
+		base := strategyParamsFromConfig(cfg)
+		res := strategy.Optimize(demoBars(600), base, strategy.DefaultGrid(), strategy.CalmarScore, 0.7)
+		json.NewEncoder(w).Encode(res)
+	})
+
+	// API: Perps venues — configured perpetuals venues and their readiness, so the
+	// console shows every perp surface (Aster, Phoenix/Vulcan, Birdeye/hyperliquid).
+	mux.HandleFunc("/api/perps/venues", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, _ := loadRuntimeConfig(absPath)
+		venues := []map[string]any{
+			{"name": "Aster DEX", "kind": "onchain_perps", "status": configuredStr(cfg.Solana.AsterAPIKey != ""), "signing": "hmac"},
+			{"name": "Phoenix (Vulcan CLI)", "kind": "onchain_perps", "status": binaryStatus("vulcan"), "modes": []string{"paper", "dry-run", "confirm-each", "auto-execute"}},
+			{"name": "Birdeye / hyperliquid", "kind": "perps_data", "status": configuredStr(firstNonEmptyEnv("BIRDEYE_API_KEY", cfg.Solana.BirdeyeAPIKey) != "")},
+		}
+		json.NewEncoder(w).Encode(map[string]any{"venues": venues})
+	})
+
 	mux.HandleFunc("/api/doctor", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		cfg, err := loadRuntimeConfig(absPath)
@@ -467,6 +539,21 @@ func main() {
 }
 
 var startTime = time.Now()
+
+// Shared runtime state for the middle-out cache and Game of Life universal
+// computer, guarded for concurrent HTTP handlers.
+var (
+	sharedCache = middleout.NewCache(16 << 20)
+	lifeMu      sync.Mutex
+	lifeGrid    *gameoflife.Grid
+)
+
+func configuredStr(ok bool) string {
+	if ok {
+		return "configured"
+	}
+	return "not_configured"
+}
 
 func defaultConfigPath() string {
 	home, _ := os.UserHomeDir()
