@@ -58,25 +58,25 @@ func ContentKey(b []byte) string {
 }
 
 type entry struct {
-	key            string
-	compressed     []byte
-	rawSize        int
-	createdAt      time.Time
-	hits           int
+	key        string
+	compressed []byte
+	rawSize    int
+	createdAt  time.Time
+	hits       int
 }
 
 // Stats is a snapshot of cache activity for the console.
 type Stats struct {
-	Entries         int     `json:"entries"`
-	Hits            int64   `json:"hits"`
-	Misses          int64   `json:"misses"`
-	HitRate         float64 `json:"hitRate"`
-	RawBytes        int64   `json:"rawBytes"`        // uncompressed bytes currently held
-	CompressedBytes int64   `json:"compressedBytes"` // on-the-wire bytes currently held
+	Entries          int     `json:"entries"`
+	Hits             int64   `json:"hits"`
+	Misses           int64   `json:"misses"`
+	HitRate          float64 `json:"hitRate"`
+	RawBytes         int64   `json:"rawBytes"`        // uncompressed bytes currently held
+	CompressedBytes  int64   `json:"compressedBytes"` // on-the-wire bytes currently held
 	CompressionRatio float64 `json:"compressionRatio"`
-	Evictions       int64   `json:"evictions"`
-	MaxBytes        int64   `json:"maxBytes"`
-	Dedupes         int64   `json:"dedupes"`
+	Evictions        int64   `json:"evictions"`
+	MaxBytes         int64   `json:"maxBytes"`
+	Dedupes          int64   `json:"dedupes"`
 }
 
 // Cache is a thread-safe, LRU, compress-on-write content cache bounded by the
