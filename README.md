@@ -23,6 +23,43 @@
 
 ---
 
+## 🆕 What's New — Live Data + Hardened Trading Engine + Zero
+
+This release turns the goal directory into a working, verifiable trading agent —
+not just a dashboard. Every item below builds clean and is covered by tests
+(`go test ./...`).
+
+**Live market data.** The web console now pulls real prices through key-less
+Jupiter (`/api/market/prices`), with Birdeye perps open interest
+(`/api/market/perps`, hyperliquid) and trending (`/api/market/trending`) wired in
+and degrading gracefully when a key is throttled or unentitled. New console
+panels: **Live Market**, **Perps Open Interest**, and a live **Strategy Engine**
+readout with a backtest equity sparkline.
+
+**Trading engine, hardened.**
+
+- **Risk-based position sizing** (`strategy.RiskAdjustedSize`) — every trade
+  risks a fixed fraction of equity, so size scales inversely with stop distance
+  and by signal confidence. Wired into the OODA loop via `risk_per_trade_pct`.
+- **Portfolio risk guard** (`trading.PortfolioLimits`) — account-level gate with
+  max concurrent positions, total/per-asset exposure caps, a **drawdown circuit
+  breaker**, and a daily-loss limit.
+- **Backtest harness** (`strategy.Backtest`) — replays the *same* `Evaluate()`
+  the live loop uses, returning win rate, total return, max drawdown, profit
+  factor, Sharpe, and an equity curve.
+- **Two real bug fixes**: the strategy's entry rule was effectively
+  *untradeable* (it required a fresh slow-EMA cross while RSI sat in a narrow
+  oversold band on the same bar — a near-impossible coincidence); it is now a
+  proper EMA-crossover entry with RSI as a blow-off filter. `AutoOptimize` had a
+  dead `winRate < 0.35` branch shadowed by `< 0.45`; reordered and clamped.
+
+**Zero engine.** `clawdbot zero {run|ask|verify|nullifier}` — a **zero-recursion**
+flat task loop with **zero-knowledge** run attestation (`pkg/zero`), statically
+gated against recursion by a call-graph test. The portable stdlib-only
+attestation core lives in `zero-main/internal/attest`. See [docs/ZERO.md](docs/ZERO.md).
+
+---
+
 ## Overview
 
 **ClawdBot** is the world's first **Solana-native sovereign AI agent** — a full-stack autonomous trading intelligence bound by Clawd's full **six-law harness**: three immutable on-chain laws and three off-chain interpretive laws. Built in pure Go for minimal resource consumption, it orchestrates on-chain data providers, zk primitives, and x402-gated surfaces through a military-grade OODA decision loop with persistent epistemological memory.
