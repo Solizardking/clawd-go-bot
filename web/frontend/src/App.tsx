@@ -105,6 +105,38 @@ interface DNAInfo {
   dna: AgentDNA
 }
 
+interface SignalInfo {
+  samples: number
+  signal: {
+    direction: string
+    strength: number
+    rsi: number
+    emaFast: number
+    emaSlow: number
+    emaCross: string
+    atr: number
+    stopLoss: number
+    takeProfit: number
+    reasoning: string
+  }
+}
+
+interface BacktestInfo {
+  bars: number
+  result: {
+    trades: number
+    wins: number
+    losses: number
+    winRate: number
+    totalReturn: number
+    avgReturn: number
+    maxDrawdown: number
+    profitFactor: number
+    sharpe: number
+    equityCurve: number[]
+  }
+}
+
 export default function App() {
   const [status, setStatus] = useState<StatusInfo | null>(null)
   const [health, setHealth] = useState<HealthInfo | null>(null)
@@ -113,6 +145,8 @@ export default function App() {
   const [envInfo, setEnvInfo] = useState<EnvInfo | null>(null)
   const [ecosystem, setEcosystem] = useState<EcosystemInfo | null>(null)
   const [cockpit, setCockpit] = useState<CockpitInfo | null>(null)
+  const [signal, setSignal] = useState<SignalInfo | null>(null)
+  const [backtest, setBacktest] = useState<BacktestInfo | null>(null)
   const [dnaInfo, setDNAInfo] = useState<DNAInfo | null>(null)
   const [configText, setConfigText] = useState<string>('')
   const [showConfig, setShowConfig] = useState(false)
@@ -128,6 +162,8 @@ export default function App() {
       fetch('/api/env').then(r => r.json()).then(setEnvInfo).catch(() => {})
       fetch('/api/ecosystem').then(r => r.json()).then(setEcosystem).catch(() => {})
       fetch('/api/trading/cockpit').then(r => r.json()).then(setCockpit).catch(() => {})
+      fetch('/api/trading/signal').then(r => r.json()).then(setSignal).catch(() => {})
+      fetch('/api/trading/backtest').then(r => r.json()).then(setBacktest).catch(() => {})
       fetch('/api/dna').then(r => r.json()).then(setDNAInfo).catch(() => {})
     }
     fetchAll()
@@ -228,6 +264,72 @@ export default function App() {
             </>
           ) : (
             <div style={{color:'var(--text-dim)'}}>Loading cockpit...</div>
+          )}
+        </div>
+
+        {/* Strategy Engine Panel — live signal + backtest from the Go engine */}
+        <div className="panel">
+          <h2>Strategy Engine</h2>
+          {signal && backtest ? (
+            <>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+                <div>
+                  <div className="value" style={{
+                    color: signal.signal.direction === 'long' ? 'var(--solana-green, #14F195)'
+                      : signal.signal.direction === 'short' ? '#ff5d6c' : 'var(--text-dim)'
+                  }}>
+                    {signal.signal.direction.toUpperCase()}
+                  </div>
+                  <div className="label">Live Signal</div>
+                </div>
+                <div>
+                  <div className="value">{(signal.signal.strength * 100).toFixed(0)}%</div>
+                  <div className="label">Strength</div>
+                </div>
+                <div>
+                  <div className="value">{signal.signal.rsi.toFixed(1)}</div>
+                  <div className="label">RSI</div>
+                </div>
+                <div>
+                  <div className="value">{signal.signal.emaCross}</div>
+                  <div className="label">EMA Cross</div>
+                </div>
+              </div>
+              <div style={{marginTop:'12px',paddingTop:'12px',borderTop:'1px solid var(--border)'}}>
+                <div className="label">Backtest ({backtest.bars} bars, {backtest.result.trades} trades)</div>
+                <Sparkline data={backtest.result.equityCurve} />
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px',marginTop:'8px'}}>
+                  <div>
+                    <div className="value" style={{fontSize:'0.9rem'}}>{(backtest.result.winRate * 100).toFixed(0)}%</div>
+                    <div className="label">Win Rate</div>
+                  </div>
+                  <div>
+                    <div className="value" style={{fontSize:'0.9rem',color: backtest.result.totalReturn >= 0 ? 'var(--solana-green, #14F195)' : '#ff5d6c'}}>
+                      {(backtest.result.totalReturn * 100).toFixed(1)}%
+                    </div>
+                    <div className="label">Total Return</div>
+                  </div>
+                  <div>
+                    <div className="value" style={{fontSize:'0.9rem',color:'#ff9f45'}}>-{(backtest.result.maxDrawdown * 100).toFixed(1)}%</div>
+                    <div className="label">Max DD</div>
+                  </div>
+                  <div>
+                    <div className="value" style={{fontSize:'0.9rem'}}>{backtest.result.sharpe.toFixed(2)}</div>
+                    <div className="label">Sharpe</div>
+                  </div>
+                  <div>
+                    <div className="value" style={{fontSize:'0.9rem'}}>{backtest.result.profitFactor.toFixed(2)}</div>
+                    <div className="label">Profit Factor</div>
+                  </div>
+                  <div>
+                    <div className="value" style={{fontSize:'0.9rem'}}>{backtest.result.wins}/{backtest.result.losses}</div>
+                    <div className="label">W / L</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{color:'var(--text-dim)'}}>Running strategy engine...</div>
           )}
         </div>
 
@@ -348,33 +450,43 @@ export default function App() {
           )}
         </div>
 
-        {/* Ecosystem Panel */}
-        <div className="panel">
-          <h2>Ecosystem</h2>
-          {ecosystem ? (
-            <div className="env-list">
-              {Object.entries(ecosystem).map(([key, val]) => (
-                <div key={key} className="env-row">
-                  <span className="env-key">{key}</span>
-                  <a className="env-val" href={val} target="_blank" rel="noreferrer">{val}</a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{color:'var(--text-dim)'}}>Loading ecosystem links...</div>
-          )}
-        </div>
-
         {/* System Log Panel */}
         <div className="panel chat-panel">
           <h2>System Log</h2>
           <div className="chat-messages" ref={logRef}>
             {logs.map((m, i) => (
-              <div key={i} className="log-line">{m}</div>
+              <div key={`${i}-${m}`} className="log-line">{m}</div>
             ))}
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+// Sparkline renders an equity curve as an inline SVG, green when the run ends up
+// and red when it ends down. No external chart dependency.
+function Sparkline({ data, width = 260, height = 48 }: { data: number[]; width?: number; height?: number }) {
+  if (!data || data.length < 2) {
+    return <div style={{color:'var(--text-dim)',fontSize:'0.75rem'}}>no equity data</div>
+  }
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const span = max - min || 1
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width
+    const y = height - ((v - min) / span) * height
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+  const up = data[data.length - 1] >= data[0]
+  const stroke = up ? 'var(--solana-green, #14F195)' : '#ff5d6c'
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none"
+      role="img" aria-label="Backtest equity curve"
+      style={{display:'block',marginTop:'6px',overflow:'visible'}}>
+      <title>Backtest equity curve</title>
+      <polyline points={pts} fill="none" stroke={stroke} strokeWidth="1.5"
+        strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   )
 }

@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/8bitlabs/clawdbot/pkg/godmode"
 	"github.com/8bitlabs/clawdbot/pkg/providers"
 	"github.com/8bitlabs/clawdbot/pkg/tools"
 )
@@ -36,6 +37,13 @@ type Config struct {
 	MaxTokens    int
 	Temperature  float64
 	OnEvent      func(Event)
+
+	// ZK God Mode — when GodMode is set, every turn races GodModeModels
+	// through pkg/godmode, and each turn's winning model is folded into
+	// the transcript chain. The attestation then commits to the exact
+	// winner set (see Result.WinnerModels + ModelSetID).
+	GodMode       *godmode.Engine
+	GodModeModels []string
 }
 
 // ── Engine ───────────────────────────────────────────────────────────
