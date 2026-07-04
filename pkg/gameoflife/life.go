@@ -7,9 +7,9 @@ package gameoflife
 
 // Grid is a wrap-around (toroidal) Life board. Cells are 0 (dead) or 1 (alive).
 type Grid struct {
-	Rows int     `json:"rows"`
-	Cols int     `json:"cols"`
-	Gen  int     `json:"gen"`
+	Rows  int       `json:"rows"`
+	Cols  int       `json:"cols"`
+	Gen   int       `json:"gen"`
 	Cells [][]uint8 `json:"cells"`
 }
 
