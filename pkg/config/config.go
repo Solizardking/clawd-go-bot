@@ -234,6 +234,10 @@ type OODAConfig struct {
 	StopLossPct      float64  `json:"stop_loss_pct"`
 	TakeProfitPct    float64  `json:"take_profit_pct"`
 	PositionSizePct  float64  `json:"position_size_pct"`
+	// RiskPerTradePct is the fraction of equity risked if a trade's stop is hit.
+	// When > 0 the OODA loop sizes positions by risk (size scales inversely with
+	// stop distance); when 0 it falls back to fixed-fraction sizing.
+	RiskPerTradePct  float64  `json:"risk_per_trade_pct"`
 	LearnIntervalMin int      `json:"learn_interval_min"`
 	AutoOptimize     bool     `json:"auto_optimize"`
 }
@@ -344,6 +348,7 @@ func DefaultConfig() *Config {
 			StopLossPct:      0.08,
 			TakeProfitPct:    0.20,
 			PositionSizePct:  0.10,
+			RiskPerTradePct:  0.01,
 			LearnIntervalMin: 30,
 			AutoOptimize:     true,
 		},

@@ -540,15 +540,7 @@ func (a *OODAAgent) evaluateToken(entry WatchlistEntry) *Signal {
 func (a *OODAAgent) openPosition(sig *Signal, entry WatchlistEntry, obs *Observation) {
 	tradeID := fmt.Sprintf("trade-%d-%s", time.Now().UnixMilli(), sig.Symbol)
 
-	sizeSOL := obs.WalletSOL * a.cfg.OODA.PositionSizePct
-	if sizeSOL > a.cfg.Solana.MaxPositionSOL {
-		sizeSOL = a.cfg.Solana.MaxPositionSOL
-	}
-	if sizeSOL < 0.001 {
-		sizeSOL = 0.01 // minimum sim size
-	}
-
-	// Use signal's SL/TP if available (from strategy engine), else compute
+	// Use signal's SL/TP if available (from strategy engine), else compute.
 	sl := sig.StopLoss
 	tp := sig.TakeProfit
 	if sl == 0 {
@@ -559,6 +551,31 @@ func (a *OODAAgent) openPosition(sig *Signal, entry WatchlistEntry, obs *Observa
 			sl = entry.Price * (1 + a.cfg.OODA.StopLossPct)
 			tp = entry.Price * (1 - a.cfg.OODA.TakeProfitPct)
 		}
+	}
+
+	// Risk-based sizing: when RiskPerTradePct is set and a stop is known, size the
+	// position so a stop-out loses that fraction of equity (volatility-aware).
+	// Falls back to fixed-fraction sizing when sizing inputs are unusable.
+	sizeSOL := 0.0
+	if a.cfg.OODA.RiskPerTradePct > 0 {
+		sizeSOL = strategy.RiskAdjustedSize(strategy.SizingInput{
+			EquitySOL:       obs.WalletSOL,
+			RiskPerTradePct: a.cfg.OODA.RiskPerTradePct,
+			EntryPrice:      entry.Price,
+			StopLossPrice:   sl,
+			Confidence:      sig.Confidence,
+			MaxPositionSOL:  a.cfg.Solana.MaxPositionSOL,
+			MaxPositionPct:  a.cfg.OODA.PositionSizePct,
+		})
+	}
+	if sizeSOL <= 0 {
+		sizeSOL = obs.WalletSOL * a.cfg.OODA.PositionSizePct
+		if a.cfg.Solana.MaxPositionSOL > 0 && sizeSOL > a.cfg.Solana.MaxPositionSOL {
+			sizeSOL = a.cfg.Solana.MaxPositionSOL
+		}
+	}
+	if sizeSOL < 0.001 {
+		sizeSOL = 0.01 // minimum sim size
 	}
 
 	pos := &Position{
