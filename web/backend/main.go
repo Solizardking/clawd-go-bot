@@ -286,9 +286,9 @@ func main() {
 		}
 		limits := portfolioLimitsFromConfig(cfg)
 		var body struct {
-			Asset    string                `json:"asset"`
-			SizeSOL  float64               `json:"sizeSol"`
-			Exposure trading.OpenExposure  `json:"exposure"`
+			Asset    string               `json:"asset"`
+			SizeSOL  float64              `json:"sizeSol"`
+			Exposure trading.OpenExposure `json:"exposure"`
 		}
 		if r.Method == http.MethodPost {
 			_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&body)
