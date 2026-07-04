@@ -25,11 +25,11 @@ The route configuration lives in `../wrangler.toml`.
 
 1. Put `onchainai.fund` and `x402.wtf` on Cloudflare.
 2. Deploy the Worker with `npx wrangler deploy`.
-3. Use Worker custom domains for exact install hosts:
+3. Use Worker routes for exact install hosts when DNS records already exist:
 
 ```text
-install.onchainai.fund
-install.x402.wtf
+install.onchainai.fund/*
+install.x402.wtf/*
 ```
 
 4. Use Worker routes for path-based installs:
