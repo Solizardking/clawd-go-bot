@@ -24,11 +24,11 @@ func TestEvaluateFiresLongOnBullishCross(t *testing.T) {
 	closes := []float64{}
 	p := 100.0
 	for i := 0; i < 60; i++ { // decline
-		p *= 0.99
+		p *= 0.992
 		closes = append(closes, p)
 	}
-	for i := 0; i < 40; i++ { // recovery
-		p *= 1.015
+	for i := 0; i < 80; i++ { // gradual recovery (not a blow-off)
+		p *= 1.006
 		closes = append(closes, p)
 	}
 	highs := make([]float64, len(closes))
@@ -64,12 +64,12 @@ func TestBacktestProducesTradesOnRecoveries(t *testing.T) {
 	bars := []Bar{}
 	p := 100.0
 	for cycle := 0; cycle < 15; cycle++ {
-		for k := 0; k < 20; k++ {
-			p *= 0.985
+		for k := 0; k < 25; k++ {
+			p *= 0.99
 			bars = append(bars, Bar{Close: p, High: p * 1.01, Low: p * 0.99})
 		}
-		for k := 0; k < 20; k++ {
-			p *= 1.03
+		for k := 0; k < 25; k++ {
+			p *= 1.012
 			bars = append(bars, Bar{Close: p, High: p * 1.01, Low: p * 0.99})
 		}
 	}

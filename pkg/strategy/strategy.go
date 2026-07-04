@@ -239,8 +239,13 @@ func Evaluate(closes, highs, lows []float64, params StrategyParams) StrategySign
 	// tape that is already overbought. (The prior rule additionally required RSI
 	// to sit in a narrow oversold band on the same bar as a slow-EMA cross, a
 	// near-impossible coincidence that made the strategy effectively never fire.)
+	// A slow EMA cross lags price, so RSI is usually elevated by the time a
+	// bullish cross confirms; filtering at RSIOverbought would reject essentially
+	// every entry. Instead we veto only genuine blow-off tops — RSI beyond the
+	// midpoint of [overbought, 100] — and let RSI scale strength below that.
+	longBlowoff := (float64(params.RSIOverbought) + 100) / 2
 	bullishCross := emaCross == "bullish"
-	rsiLongOK := rsi < float64(params.RSIOverbought)
+	rsiLongOK := rsi < longBlowoff
 	priceAboveFast := currentPrice > signal.EMAFast
 
 	if bullishCross && rsiLongOK && priceAboveFast {
@@ -259,8 +264,9 @@ func Evaluate(closes, highs, lows []float64, params StrategyParams) StrategySign
 	// ── SHORT signal ─────────────
 	// Mirror of the long: a fresh bearish cross confirmed by price, with RSI
 	// filtering out already-oversold tapes. Gated on UsePerps since spot cannot short.
+	shortCapitulation := float64(params.RSIOversold) / 2
 	bearishCross := emaCross == "bearish"
-	rsiShortOK := rsi > float64(params.RSIOversold)
+	rsiShortOK := rsi > shortCapitulation
 	priceBelowFast := currentPrice < signal.EMAFast
 
 	if bearishCross && rsiShortOK && priceBelowFast && params.UsePerps {

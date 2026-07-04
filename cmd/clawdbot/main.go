@@ -134,6 +134,7 @@ Public surfaces:
 		NewVersionCommand(),
 		NewWebCommand(),
 		NewPerpsCommand(),
+		NewZeroCommand(),
 	)
 
 	return cmd
