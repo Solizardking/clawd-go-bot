@@ -1,8 +1,0 @@
-# test log
-getenv GOTMPDIR
-getenv TMPDIR
-open /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestEnsureFileDoesNotOverwriteExistingDNA2275331155/001/agent-dna.json
-stat /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestEnsureFileDoesNotOverwriteExistingDNA2275331155/001
-open /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestEnsureFileDoesNotOverwriteExistingDNA2275331155/001/agent-dna.json
-open /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T/TestEnsureFileDoesNotOverwriteExistingDNA2275331155/001/agent-dna.json
-open /var/folders/z2/fjzp59x97m5cmb81szvryzxh0000gn/T
