@@ -36,6 +36,7 @@ import (
 	dnaPkg "github.com/8bitlabs/clawdbot/pkg/dna"
 	"github.com/8bitlabs/clawdbot/pkg/doctor"
 	"github.com/8bitlabs/clawdbot/pkg/laws"
+	"github.com/8bitlabs/clawdbot/pkg/solana"
 	"github.com/8bitlabs/clawdbot/pkg/strategy"
 	"github.com/8bitlabs/clawdbot/pkg/trading"
 	"github.com/8bitlabs/clawdbot/pkg/wallet"
@@ -306,6 +307,79 @@ func main() {
 			},
 			"guard": result,
 		})
+	})
+
+	// API: Live prices — key-less Jupiter USD prices for the watchlist (or ?ids=).
+	// Always available even when higher-tier providers are throttled.
+	mux.HandleFunc("/api/market/prices", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, _ := loadRuntimeConfig(absPath)
+		mints := watchlistMints(cfg)
+		if raw := strings.TrimSpace(r.URL.Query().Get("ids")); raw != "" {
+			mints = splitCSV(raw)
+		}
+		jup := solana.NewJupiterClient(cfg.Solana.JupiterEndpoint, cfg.Solana.JupiterAPIKey)
+		prices, err := jup.GetPrices(mints)
+		resp := map[string]any{"source": "jupiter", "asOf": time.Now().UTC().Format(time.RFC3339), "prices": prices}
+		if err != nil {
+			resp["error"] = err.Error()
+			resp["ok"] = false
+		} else {
+			resp["ok"] = true
+			resp["count"] = len(prices)
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	// API: Live perps — Birdeye perps open interest (hyperliquid). Degrades
+	// gracefully with an error field when the key is unentitled or throttled.
+	mux.HandleFunc("/api/market/perps", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, _ := loadRuntimeConfig(absPath)
+		key := firstNonEmptyEnv("BIRDEYE_API_KEY", cfg.Solana.BirdeyeAPIKey)
+		resp := map[string]any{"source": "birdeye/hyperliquid", "asOf": time.Now().UTC().Format(time.RFC3339)}
+		if key == "" {
+			resp["ok"] = false
+			resp["error"] = "BIRDEYE_API_KEY not configured"
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+		exchange := firstNonEmpty(r.URL.Query().Get("exchange"), "hyperliquid")
+		tf := firstNonEmpty(r.URL.Query().Get("time_frame"), "all")
+		tokens, err := solana.NewBirdeyeClient(key).GetPerpsTokenList(exchange, tf, 10)
+		if err != nil {
+			resp["ok"] = false
+			resp["error"] = err.Error()
+		} else {
+			resp["ok"] = true
+			resp["count"] = len(tokens)
+			resp["tokens"] = tokens
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	// API: Live trending — Birdeye trending Solana tokens with graceful degradation.
+	mux.HandleFunc("/api/market/trending", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		cfg, _ := loadRuntimeConfig(absPath)
+		key := firstNonEmptyEnv("BIRDEYE_API_KEY", cfg.Solana.BirdeyeAPIKey)
+		resp := map[string]any{"source": "birdeye", "asOf": time.Now().UTC().Format(time.RFC3339)}
+		if key == "" {
+			resp["ok"] = false
+			resp["error"] = "BIRDEYE_API_KEY not configured"
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+		tokens, err := solana.NewBirdeyeClient(key).GetTrendingLive(20)
+		if err != nil {
+			resp["ok"] = false
+			resp["error"] = err.Error()
+		} else {
+			resp["ok"] = true
+			resp["count"] = len(tokens)
+			resp["tokens"] = tokens
+		}
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	mux.HandleFunc("/api/doctor", func(w http.ResponseWriter, r *http.Request) {
